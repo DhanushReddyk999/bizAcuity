@@ -1,0 +1,478 @@
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: linear-gradient(120deg, #f0f4fd 0%, #e9eafc 100%);
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color: #000;
+}
+
+.appHeader {
+  width: 100vw;
+  background: #22223b;
+  color: #fff;
+  padding: 1.2rem 0 1rem 0;
+  text-align: center;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 12px rgba(34,34,59,0.08);
+  margin-bottom: 2.5rem;
+}
+.appHeader span {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #b5b5d6;
+  display: block;
+  margin-top: 0.3em;
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  width: 100vw;
+  min-height: 80vh;
+  color: #000;
+}
+
+.wall {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 1400px;
+  box-sizing: border-box;
+}
+.wallSettings {
+  flex: 0 0 400px;
+  min-width: 400px;
+  align-self: flex-start;
+  margin-right: 0;
+  margin-left: 40px;
+  padding: 40px 32px 32px 32px;
+  background: linear-gradient(135deg, #f9fafb 70%, #e3e8f0 100%);
+  border-radius: 28px;
+  box-shadow: 0 8px 32px rgba(33, 33, 100, 0.13);
+  border: 1.5px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 2.2rem;
+}
+.wallSettings h3 {
+  margin-top: 0;
+  margin-bottom: 0.7em;
+  font-weight: 800;
+  color: #1769aa;
+  letter-spacing: 0.01em;
+  font-size: 1.35em;
+  position: relative;
+  padding-left: 0.7em;
+}
+.wallSettings h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  width: 6px;
+  height: 1.2em;
+  background: #2196f3;
+  border-radius: 4px;
+}
+.wallSettings .divider {
+  width: 100%;
+  height: 1.5px;
+  background: linear-gradient(90deg, #e5e7eb 60%, #b5b5d6 100%);
+  border: none;
+  margin: 0.7em 0 1.2em 0;
+}
+.displayWall {
+  flex: none;
+  margin-left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Wall image hover effect */
+.displayWall .Rnd__resizable {
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.displayWall .Rnd__resizable:hover {
+  box-shadow: 0 0 0 4px #2196f3, 0 2px 12px rgba(33,150,243,0.10);
+  transform: scale(1.03);
+  z-index: 10;
+}
+
+.wallSettings h2, .wallSettings h3 {
+  margin-top: 0;
+  margin-bottom: 0.5em;
+  font-weight: 700;
+  color: #000;
+  letter-spacing: 0.01em;
+}
+.wallSettings label {
+  font-size: 1em;
+  color: #000;
+  margin-bottom: 0.3em;
+  margin-right: 0.5em;
+}
+.wallSettings input[type="text"],
+.wallSettings input[type="color"],
+.wallSettings select {
+  padding: 0.5em 0.8em;
+  border-radius: 7px;
+  border: 1px solid #d1d5db;
+  font-size: 1em;
+  margin-bottom: 0.7em;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.wallSettings input[type="text"]:focus,
+.wallSettings input[type="color"]:focus,
+.wallSettings select:focus {
+  border-color: #2196f3;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.08);
+  outline: none;
+}
+.wallSettings button {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  background: #2196f3;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.wallSettings button:hover {
+  background: #1769aa;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.10);
+}
+.wallSettings fieldset {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1em;
+  margin-bottom: 1em;
+  background: #fff;
+}
+.wallSettings legend {
+  font-size: 1em;
+  color: #000;
+  font-weight: 600;
+  padding: 0 0.5em;
+}
+button, select {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #f5f7fa;
+  cursor: pointer;
+  transition: border-color 0.25s, box-shadow 0.2s, background 0.2s;
+  margin-bottom: 0.5em;
+}
+button:hover, select:hover {
+  border-color: #2196f3;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.08);
+  background: #e3f2fd;
+}
+button:focus, select:focus {
+  outline: 3px auto #2196f3;
+}
+input[type="file"] {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .wall {
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    max-width: 100vw;
+  }
+  .wallSettings, .imageSettings {
+    min-width: 95vw;
+    max-width: 98vw;
+    margin-left: 0;
+  }
+  .displayWall {
+    min-width: 95vw;
+    min-height: 60vh;
+    padding: 10px;
+    margin-left: 0;
+    justify-content: center;
+    align-items: center;
+  }
+}
+.imageSettings {
+  background: #f9fafb;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  padding: 24px 18px;
+  margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
+  margin-left: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  border: 1px solid #e5e7eb;
+  min-width: 260px;
+  max-width: 420px;
+}
+.imageSettings h3 {
+  margin-top: 0;
+  margin-bottom: 0.5em;
+  font-weight: 700;
+  color: #000;
+  letter-spacing: 0.01em;
+}
+.imageSettings label {
+  font-size: 1em;
+  color: #000;
+  margin-bottom: 0.3em;
+  margin-right: 0.5em;
+}
+.imageSettings select {
+  padding: 0.5em 0.8em;
+  border-radius: 7px;
+  border: 1px solid #d1d5db;
+  font-size: 1em;
+  margin-bottom: 0.7em;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.imageSettings select:focus {
+  border-color: #2196f3;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.08);
+  outline: none;
+}
+.imageSettings button {
+  background: #2196f3;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  margin-bottom: 0.5em;
+}
+.imageSettings button:hover {
+  background: #1769aa;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.10);
+}
+
+.wallSettings, .imageSettings, .wallSettings h2, .wallSettings h3, .imageSettings h3, .wallSettings label, .imageSettings label, .wallSettings legend {
+  color: #000 !important;
+}
+
+.wallSettings input[type="text"],
+.imageSettings input[type="text"] {
+  color: #000;
+}
+
+.createWallBtn {
+  background: linear-gradient(90deg, #2196f3 0%, #1769aa 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2.2rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 12px rgba(33,150,243,0.10);
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  cursor: pointer;
+}
+.createWallBtn:disabled {
+  background: #b5b5d6;
+  color: #fff;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.createWallBtn:hover:not(:disabled) {
+  background: linear-gradient(90deg, #1769aa 0%, #2196f3 100%);
+  box-shadow: 0 4px 18px rgba(33,150,243,0.18);
+  transform: translateY(-2px) scale(1.03);
+}
+
+input, select, textarea {
+  color: #000 !important;
+}
+
+.wallSettingsBlock {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(33,33,100,0.07);
+  padding: 1.3em 1.2em 1.1em 1.2em;
+  margin-bottom: 1.3em;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+}
+.wallSettingsBlock:last-child {
+  margin-bottom: 0;
+}
+
+.wallDimensionsPanel {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(33,150,243,0.10);
+  padding: 2rem 2.5rem 1.5rem 2.5rem;
+  margin: 2rem auto 2.5rem auto;
+  display: flex;
+  flex-direction: row;
+  gap: 2.5em;
+  justify-content: center;
+  align-items: flex-end;
+  border: 1px solid #e5e7eb;
+  max-width: 600px;
+}
+.wallDimensionsPanel .inputs {
+  display: flex;
+  flex-direction: row;
+  gap: 2em;
+  width: 100%;
+}
+.wallDimensionsPanel label {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #1769aa;
+  margin-bottom: 0.3em;
+  margin-right: 0.5em;
+}
+.wallDimensionsPanel input[type="text"] {
+  padding: 0.7em 1.1em;
+  border-radius: 8px;
+  border: 1.5px solid #d1d5db;
+  font-size: 1.1em;
+  background: #f9fafb;
+  color: #000;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 0;
+}
+.wallDimensionsPanel input[type="text"]:focus {
+  border-color: #2196f3;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.10);
+  outline: none;
+}
+
+.wallBackgroundsPanel {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(33,150,243,0.10);
+  padding: 2rem 2.5rem 1.5rem 2.5rem;
+  margin: 2rem auto 2.5rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5em;
+  border: 1px solid #e5e7eb;
+  max-width: 600px;
+}
+.wallBackgroundsPanel fieldset {
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.2em 1.2em 1em 1.2em;
+  margin-bottom: 1.2em;
+  background: #f9fafb;
+  transition: border-color 0.2s;
+}
+.wallBackgroundsPanel legend {
+  font-size: 1.1em;
+  color: #1769aa;
+  font-weight: 700;
+  padding: 0 0.5em;
+}
+.wallBackgroundsPanel label {
+  font-size: 1em;
+  color: #22223b;
+  margin-bottom: 0.3em;
+  margin-right: 0.5em;
+  font-weight: 500;
+}
+.wallBackgroundsPanel select, .wallBackgroundsPanel input[type="color"] {
+  padding: 0.5em 0.8em;
+  border-radius: 7px;
+  border: 1.5px solid #d1d5db;
+  font-size: 1em;
+  margin-bottom: 0.7em;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.wallBackgroundsPanel select:focus, .wallBackgroundsPanel input[type="color"]:focus {
+  border-color: #2196f3;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.08);
+  outline: none;
+}
+.wallBackgroundsPanel button {
+  background: #2196f3;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  margin-bottom: 0.5em;
+}
+.wallBackgroundsPanel button:hover {
+  background: #1769aa;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.10);
+}
+
+.wallSettingsPanel {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(33,150,243,0.10);
+  padding: 2.5rem 2.5rem 2rem 2.5rem;
+  margin: 2.5rem auto 2.5rem auto;
+  max-width: 1200px;
+  width: 100%;
+  border: 1.5px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5em;
+}
+.wallSettingsPanel h2 {
+  margin-top: 0;
+  margin-bottom: 1.2em;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1769aa;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+.wallSettingsPanel > div {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 2.5em;
+  justify-content: center;
+  align-items: flex-end;
+}
+@media (max-width: 900px) {
+  .wallSettingsPanel > div {
+    flex-direction: column;
+    gap: 2em;
+    align-items: stretch;
+  }
+  .wallSettingsPanel {
+    padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+    max-width: 98vw;
+  }
+}
