@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import html2canvas from "html2canvas";
-import {useNavigate} from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 import "./App.css";
 import Wall from "./wall.jsx";
@@ -18,6 +18,24 @@ function mainWall() {
   const [height, setHeight] = useState("500px");
   const [activeType, setActiveType] = useState("fill");
   const navigate = useNavigate();
+  const [wallId, setWallId] = useState(null); // Track current wall_id
+
+  useEffect(() => {
+    // If a draft is passed via navigation, load it
+    if (
+      window.history.state &&
+      window.history.state.usr &&
+      window.history.state.usr.draft
+    ) {
+      const draft = window.history.state.usr.draft;
+      setBackground(draft.background);
+      setImages(draft.images);
+      setWidth(draft.width);
+      setHeight(draft.height);
+      setActiveType(draft.activeType || "fill");
+      setWallId(draft.wall_id || null); // Set wall_id if editing
+    }
+  }, []);
 
   function handleDownloadWall() {
     if (wallRef.current) {
@@ -28,6 +46,62 @@ function mainWall() {
         link.download = "my_wall.png";
         link.click();
       });
+    }
+  }
+
+  function toMySQLDateTime(ts) {
+    const date = new Date(ts);
+    return date.toISOString().slice(0, 19).replace("T", " ");
+  }
+
+  let handleSaveDraft=async()=>{
+    const user = JSON.parse(localStorage.getItem("user"));
+    const uid = user?.id;
+
+    if (!user) {
+      alert("You must be logged in to save drafts.");
+      return;
+    }
+    const name = window.prompt("Enter a name for your draft:");
+    if (!name || !name.trim()) {
+      alert("Draft not saved. Please provide a name.");
+      return;
+    }
+    const wall_data = {
+      background,
+      images,
+      width,
+      height,
+      activeType,
+      name: name.trim(),
+    };
+    const base64 = btoa(JSON.stringify(wall_data));
+    try{
+
+      const body = {
+        uid: uid,
+        wall_data: base64,
+        timestamp: toMySQLDateTime(Date.now()),
+        wall_name: name.trim(),
+      };
+      if (wallId) {
+        body.wall_id = wallId;
+      }
+      const response = await fetch("http://localhost:8080/saveDrafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (response.ok) {
+        alert(wallId ? "Draft updated!" : "Draft saved!");
+      }
+      else{
+        const error=await response.text()
+        alert(error);
+      }
+    }
+    catch(err){
+      console.log(err);
     }
   }
 
@@ -83,6 +157,22 @@ function mainWall() {
               }}
             >
               Download Wall
+            </button>
+            <button
+              onClick={handleSaveDraft}
+              style={{
+                marginTop: "10px",
+                padding: "12px 24px",
+                fontWeight: "bold",
+                backgroundColor: "#4caf50",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "16px",
+              }}
+            >
+              Save as Draft
             </button>
           </div>
         </>
@@ -298,10 +388,10 @@ function mainWall() {
           fontWeight: 700,
           boxShadow: "0 2px 12px rgba(33,150,243,0.13)",
           letterSpacing: "0.01em",
-          transition: "background 0.2s, color 0.2s, transform 0.15s"
+          transition: "background 0.2s, color 0.2s, transform 0.15s",
         }}
-        onMouseOver={e => e.currentTarget.style.backgroundColor = '#2196f3'}
-        onMouseOut={e => e.currentTarget.style.backgroundColor = '#1769aa'}
+        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#2196f3")}
+        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#1769aa")}
       >
         Profile
       </button>
