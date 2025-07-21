@@ -11,6 +11,7 @@ import StickerPanel from "./stickers.jsx";
 
 function mainWall() {
   let [wallValue, setWallValue] = useState(true);
+  const user = JSON.parse(localStorage.getItem("user"));
   let [background, setBackground] = useState("url(/CottageWall.jpg)");
   let [images, setImages] = useState([]);
   const wallRef = useRef(null);
@@ -19,6 +20,7 @@ function mainWall() {
   const [activeType, setActiveType] = useState("fill");
   const navigate = useNavigate();
   const [wallId, setWallId] = useState(null); // Track current wall_id
+  const [profilePhoto, setProfilePhoto] = useState(null);
 
   useEffect(() => {
     // If a draft is passed via navigation, load it
@@ -34,6 +36,16 @@ function mainWall() {
       setHeight(draft.height);
       setActiveType(draft.activeType || "fill");
       setWallId(draft.wall_id || null); // Set wall_id if editing
+    }
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && user.id && user.token) {
+      fetch(`http://localhost:8080/profilePhoto/${user.id}`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.photo) setProfilePhoto(data.photo);
+        });
     }
   }, []);
 
@@ -55,7 +67,6 @@ function mainWall() {
   }
 
   let handleSaveDraft=async()=>{
-    const user = JSON.parse(localStorage.getItem("user"));
     const uid = user?.id;
 
     if (!user) {
@@ -89,9 +100,17 @@ function mainWall() {
       }
       const response = await fetch("http://localhost:8080/saveDrafts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`
+        },
         body: JSON.stringify(body),
       });
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem("user");
+        window.location.href = "/Login";
+        return;
+      }
       if (response.ok) {
         alert(wallId ? "Draft updated!" : "Draft saved!");
       }
@@ -128,8 +147,8 @@ function mainWall() {
   return (
     <>
       <div className="appHeader">
-        Virtual Wall Designer
-        <span>Design your own wall with custom backgrounds and images</span>
+        Altar Designer
+        <span>Design your own altar with custom backgrounds and sacred decor</span>
       </div>
       {wallValue && (
         <>
@@ -158,10 +177,18 @@ function mainWall() {
             >
               Download Wall
             </button>
-            <button
-              onClick={handleSaveDraft}
+            <div
               style={{
+                display: "flex",
+                flexDirection: "row",
+                gap: "1em",
+                alignItems: "center",
                 marginTop: "10px",
+              }}
+            >
+              <button
+                onClick={handleSaveDraft}
+                style={{
                 padding: "12px 24px",
                 fontWeight: "bold",
                 backgroundColor: "#4caf50",
@@ -174,6 +201,29 @@ function mainWall() {
             >
               Save as Draft
             </button>
+              <button
+                onClick={() => {
+                  setBackground("url(/CottageWall.jpg)");
+                  setImages([]);
+                  setWidth("1000px");
+                  setHeight("500px");
+                  setActiveType("fill");
+                  setWallId(null);
+                }}
+                style={{
+                  padding: "12px 24px",
+                  fontWeight: "bold",
+                  backgroundColor: "#2196f3",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "16px",
+                }}
+              >
+                Default Wall
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -372,29 +422,66 @@ function mainWall() {
           </div>
         </div>
       )}
-      <button
+      {user && user.role === "admin" && (
+        <button
+          onClick={() => navigate("/Admin")}
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "20px",
+            backgroundColor: "#b71c1c",
+            color: "#fff",
+            padding: "18px 36px",
+            border: "none",
+            borderRadius: "12px",
+            cursor: "pointer",
+            fontSize: "1.25em",
+            fontWeight: 700,
+            boxShadow: "0 2px 12px rgba(183,28,28,0.13)",
+            letterSpacing: "0.01em",
+            transition: "background 0.2s, color 0.2s, transform 0.15s",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#ff4d4d")}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#b71c1c")}
+        >
+          Admin
+        </button>
+      )}
+      {/* Profile button replaced with avatar */}
+      <div
         onClick={() => navigate("/Profile")}
         style={{
           position: "absolute",
           top: "20px",
-          right: "20px",
-          backgroundColor: "#1769aa",
-          color: "#fff",
-          padding: "18px 36px",
-          border: "none",
-          borderRadius: "12px",
+          left: "20px",
+          width: 72,
+          height: 72,
+          borderRadius: "50%",
+          overflow: "hidden",
+          background: "#e9eafc",
+          border: '2.5px solid #1769aa',
           cursor: "pointer",
-          fontSize: "1.25em",
-          fontWeight: 700,
           boxShadow: "0 2px 12px rgba(33,150,243,0.13)",
-          letterSpacing: "0.01em",
-          transition: "background 0.2s, color 0.2s, transform 0.15s",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'box-shadow 0.2s, border 0.2s',
         }}
-        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#2196f3")}
-        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#1769aa")}
+        title="Go to Profile"
       >
-        Profile
-      </button>
+        {profilePhoto ? (
+          <img
+            src={profilePhoto.startsWith('data:') ? profilePhoto : `data:image/*;base64,${profilePhoto}`}
+            alt="Profile"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+          />
+        ) : (
+          <svg width="38" height="38" fill="#b5b5d6" viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="5" fill="#b5b5d6" />
+            <path d="M12 14c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z" fill="#e9eafc" />
+          </svg>
+        )}
+      </div>
     </>
   );
 }

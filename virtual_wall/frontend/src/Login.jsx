@@ -1,17 +1,19 @@
 import {useState,useEffect} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate, useLocation} from 'react-router-dom';
 
 export default function Login(){
     const navigate = useNavigate();
+    const location = useLocation();
     const [username,setUsername]=useState('');
     const [password,setPassword]=useState('');
 
     useEffect(() => {
         const user = localStorage.getItem("user");
         if (user) {
-            navigate('/mainWall');
+            const redirectPath = location.state?.redirect || '/mainWall';
+            navigate(redirectPath);
         }
-    }, []);
+    }, [location.state]);
 
 
     let handleLogin=async ()=>{
@@ -33,7 +35,8 @@ export default function Login(){
             if(response.ok){
                 const userdata=await response.json();
                 localStorage.setItem("user",JSON.stringify(userdata));
-                navigate('/mainWall');
+                const redirectPath = location.state?.redirect || '/mainWall';
+                navigate(redirectPath);
             }
             else{
                 const error=await response.text();
@@ -48,9 +51,9 @@ export default function Login(){
     return (
         <div style={{ minHeight: '100vh', width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(120deg, #f0f4fd 0%, #e9eafc 100%)' }}>
             <div style={{ width: '100vw', background: '#22223b', color: '#fff', padding: '1.2rem 0 1rem 0', textAlign: 'center', fontSize: '2.1rem', fontWeight: 800, letterSpacing: '0.04em', boxShadow: '0 2px 12px rgba(34,34,59,0.08)', marginBottom: '2.5rem' }}>
-                Virtual Wall Designer
+                Altar Designer
                 <span style={{ fontSize: '1.1rem', fontWeight: 400, color: '#b5b5d6', display: 'block', marginTop: '0.3em' }}>
-                    Design your own wall with custom backgrounds and images
+                    Design your own altar with custom backgrounds and sacred decor
                 </span>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
