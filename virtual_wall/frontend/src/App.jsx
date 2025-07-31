@@ -9,9 +9,16 @@ import SharedDraft from './SharedDraft.jsx';
 import EditSharedDraft from './EditSharedDraft.jsx';
 import AuthViewDraft from './AuthViewDraft.jsx';
 import AuthEditDraft from './AuthEditDraft.jsx';
+import Subscriptions from './subscriptions.jsx';
+import MailVerification from './MailVerification';
+import ForgotPassword from './ForgotPassword';
+import ResetPassword from './ResetPassword';
+import PlanFeatures from './PlanFeatures';
+import { PlanProvider } from './PlanContext';
 
 export default function App(){
   return (
+    <PlanProvider>
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -24,7 +31,13 @@ export default function App(){
         <Route path="/edit-shared/:editId" element={<EditSharedDraft />} />
         <Route path="/auth-view/:viewId" element={<AuthViewDraft />} />
         <Route path="/auth-edit/:editId" element={<AuthEditDraft />} />
+        <Route path="/subscriptions" element={<Subscriptions open={true} isPage={true} />} />
+        <Route path="/mailverification" element={<MailVerification />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/admin/plan-features/:planId" element={<PlanFeatures />} />
       </Routes>
     </Router>
+    </PlanProvider>
   );
 }

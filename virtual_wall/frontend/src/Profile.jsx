@@ -1,5 +1,11 @@
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Profile.css";
+import Subscriptions from './subscriptions.jsx';
+import { usePlan } from "./PlanContext";
+import { validatePassword, getPasswordStrengthColor, getPasswordStrengthText } from './utils/passwordValidation';
+import { buildApiUrl } from './config/api';
+import { APP_CONSTANTS, isValidEmail, formatExpiry } from './config/constants';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -9,6 +15,17 @@ export default function Profile() {
   const settingsBtnRef = useRef(null);
   const settingsMenuRef = useRef(null);
   const navigate = useNavigate();
+  const { planFeatures } = usePlan();
+  
+  // Share feature flags
+  const shareAuthViewEnabled = planFeatures.share_authorized_view_enabled;
+  const shareAuthEditEnabled = planFeatures.share_authorized_edit_enabled;
+  const shareUnauthViewEnabled = planFeatures.share_unauthorized_view_enabled;
+  const shareUnauthEditEnabled = planFeatures.share_unauthorized_edit_enabled;
+  
+  // Check if any sharing is enabled
+  const anySharingEnabled = shareAuthViewEnabled || shareAuthEditEnabled || shareUnauthViewEnabled || shareUnauthEditEnabled;
+
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editUsername, setEditUsername] = useState("");
   const [editEmail, setEditEmail] = useState("");
@@ -24,6 +41,8 @@ export default function Profile() {
   const [changePwdLoading, setChangePwdLoading] = useState(false);
   const [changePwdError, setChangePwdError] = useState("");
   const [changePwdSuccess, setChangePwdSuccess] = useState("");
+  const [newPasswordValidation, setNewPasswordValidation] = useState({ isValid: false, errors: [], strength: 'weak' });
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
   const fileInputRef = useRef();
@@ -54,15 +73,50 @@ export default function Profile() {
   const [viewLinkLoading, setViewLinkLoading] = useState(false);
   const [editLinkLoading, setEditLinkLoading] = useState(false);
 
-  // Helper to validate email
-  function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
+  // Subscription/payment UI state
+  const [subscription, setSubscription] = useState('free');
+  const [subscriptionExpires, setSubscriptionExpires] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState("");
+
+  // For email OTP verification
+  const [showEmailOtpModal, setShowEmailOtpModal] = useState(false);
+  const [pendingNewEmail, setPendingNewEmail] = useState("");
+  const [emailOtp, setEmailOtp] = useState("");
+  const [emailOtpError, setEmailOtpError] = useState("");
+  const [emailOtpLoading, setEmailOtpLoading] = useState(false);
+
+  // Password validation handler
+  const handleNewPasswordChange = (e) => {
+    const newPasswordValue = e.target.value;
+    setNewPassword(newPasswordValue);
+    const validation = validatePassword(newPasswordValue);
+    setNewPasswordValidation(validation);
+  };
+
+  // Fetch subscription status from backend
+  useEffect(() => {
+    let u = null;
+    try {
+      u = JSON.parse(localStorage.getItem('user'));
+    } catch {}
+    if (!u?.id) return;
+    fetch(`/api/subscriptions/status/${u.id}`)
+      .then(res => res.json())
+      .then(data => {
+        setSubscription(data.plan || 'free');
+        setSubscriptionExpires(data.expires);
+      });
+  }, [showPaymentModal, paymentSuccess]);
+
+
 
   // Function to generate and show public share link
   const handlePublicShare = async (wall_id) => {
     try {
-      const res = await fetch(`http://localhost:8080/shareDraft/${wall_id}`, {
+      const res = await fetch(buildApiUrl(`/shareDraft/${wall_id}`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -70,19 +124,19 @@ export default function Profile() {
         },
       });
       if (!res.ok) {
-        alert("Failed to generate share link");
+        alert(APP_CONSTANTS.VALIDATION_MESSAGES.SAVE_FAILED);
         return;
       }
       const data = await res.json();
       setGeneratedUnauthorizedViewLink(data.shareUrl);
     } catch (err) {
-      alert("Error generating share link");
+      alert(APP_CONSTANTS.VALIDATION_MESSAGES.NETWORK_ERROR);
     }
   };
   // Function to generate and show edit link
   const handleEditShare = async (wall_id) => {
     try {
-      const res = await fetch(`http://localhost:8080/editShareDraft/${wall_id}`, {
+      const res = await fetch(buildApiUrl(`/editShareDraft/${wall_id}`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -90,13 +144,13 @@ export default function Profile() {
         },
       });
       if (!res.ok) {
-        alert("Failed to generate edit link");
+        alert(APP_CONSTANTS.VALIDATION_MESSAGES.SAVE_FAILED);
         return;
       }
       const data = await res.json();
       setGeneratedUnauthorizedEditLink(data.editUrl);
     } catch (err) {
-      alert("Error generating edit link");
+      alert(APP_CONSTANTS.VALIDATION_MESSAGES.NETWORK_ERROR);
     }
   };
 
@@ -104,7 +158,7 @@ export default function Profile() {
   const handleAuthorizedViewShare = async (wall_id, emails) => {
     setViewLinkLoading(true);
     try {
-      const res = await fetch(`http://localhost:8080/authViewShareDraft/${wall_id}`, {
+      const res = await fetch(buildApiUrl(`/authViewShareDraft/${wall_id}`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -113,14 +167,14 @@ export default function Profile() {
         body: JSON.stringify({ emails }),
       });
       if (!res.ok) {
-        alert("Failed to generate authorized view link");
+        alert(APP_CONSTANTS.VALIDATION_MESSAGES.SAVE_FAILED);
         setViewLinkLoading(false);
         return;
       }
       const data = await res.json();
       setGeneratedViewLink(data.viewUrl);
     } catch (err) {
-      alert("Error generating authorized view link");
+      alert(APP_CONSTANTS.VALIDATION_MESSAGES.NETWORK_ERROR);
     } finally {
       setViewLinkLoading(false);
     }
@@ -130,7 +184,7 @@ export default function Profile() {
   const handleAuthorizedEditShare = async (wall_id, emails) => {
     setEditLinkLoading(true);
     try {
-      const res = await fetch(`http://localhost:8080/authEditShareDraft/${wall_id}`, {
+      const res = await fetch(buildApiUrl(`/authEditShareDraft/${wall_id}`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -139,14 +193,14 @@ export default function Profile() {
         body: JSON.stringify({ emails }),
       });
       if (!res.ok) {
-        alert("Failed to generate authorized edit link");
+        alert(APP_CONSTANTS.VALIDATION_MESSAGES.SAVE_FAILED);
         setEditLinkLoading(false);
         return;
       }
       const data = await res.json();
       setGeneratedEditLink(data.editUrl);
     } catch (err) {
-      alert("Error generating authorized edit link");
+      alert(APP_CONSTANTS.VALIDATION_MESSAGES.NETWORK_ERROR);
     } finally {
       setEditLinkLoading(false);
     }
@@ -165,7 +219,7 @@ export default function Profile() {
 
       // Fetch profile photo
       try {
-        const res = await fetch(`http://localhost:8080/profilePhoto/${userObj.id}`, {
+        const res = await fetch(buildApiUrl(`/profilePhoto/${userObj.id}`), {
           headers: { Authorization: `Bearer ${userObj.token}` }
         });
         if (res.ok) {
@@ -179,7 +233,7 @@ export default function Profile() {
       try {
         const token = userObj.token;
         const res = await fetch(
-          `http://localhost:8080/getDrafts/${userObj.id}`,
+          buildApiUrl(`/getDrafts/${userObj.id}`),
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (res.status === 401 || res.status === 403) {
@@ -258,7 +312,7 @@ export default function Profile() {
 
     try {
       const token = user.token;
-      const res = await fetch(`http://localhost:8080/deleteDraft/${wall_id}`, {
+      const res = await fetch(buildApiUrl(`/deleteDraft/${wall_id}`), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -270,7 +324,7 @@ export default function Profile() {
 
       if (!res.ok) {
         const error = await res.text();
-        alert("Failed to delete draft: " + error);
+        alert(APP_CONSTANTS.VALIDATION_MESSAGES.DELETE_FAILED + ": " + error);
         return;
       }
 
@@ -278,7 +332,7 @@ export default function Profile() {
       setDrafts(updatedDrafts);
     } catch (err) {
       console.error("Delete draft error:", err);
-      alert("Something went wrong while deleting the draft.");
+      alert(APP_CONSTANTS.VALIDATION_MESSAGES.NETWORK_ERROR);
     }
   }
 
@@ -296,13 +350,33 @@ export default function Profile() {
     setPasswordPromptOpen(true);
     setPendingEdit({ username: editUsername, email: editEmail });
   };
-  // Handle password submit and update user
+  // Modified handlePasswordSubmit for email change verification
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setEditLoading(true);
     setEditError("");
     try {
-      const res = await fetch("http://localhost:8080/updateUser", {
+      // If email changed, start verification flow
+      if (pendingEdit.email !== user.email) {
+        // Request email change OTP
+        const res = await fetch(buildApiUrl("/mail-verification/request-email-change"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id, newEmail: pendingEdit.email }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          setEditError(data.error || "Failed to send verification code");
+          setEditLoading(false);
+          return;
+        }
+        setShowEmailOtpModal(true);
+        setPendingNewEmail(pendingEdit.email);
+        setEditLoading(false);
+        return;
+      }
+      // If email not changed, proceed as before
+      const res = await fetch(buildApiUrl("/updateUser"), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -340,11 +414,47 @@ export default function Profile() {
     }
   };
 
+  // Handle OTP submit for email change
+  const handleEmailOtpSubmit = async (e) => {
+    e.preventDefault();
+    setEmailOtpLoading(true);
+    setEmailOtpError("");
+    try {
+      const res = await fetch(buildApiUrl("/mail-verification/verify-email-change"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, newEmail: pendingNewEmail, otp: emailOtp }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setEmailOtpError(data.error || "Failed to verify code");
+        setEmailOtpLoading(false);
+        return;
+      }
+      // Update user in UI and localStorage
+      const updatedUser = { ...user, email: pendingNewEmail };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setShowEmailOtpModal(false);
+      setEditModalOpen(false);
+      setPasswordPromptOpen(false);
+      setEditPassword("");
+      setEditLoading(false);
+      setEditError("");
+      setPendingNewEmail("");
+      setEmailOtp("");
+      setEmailOtpError("");
+    } catch (err) {
+      setEmailOtpError("Something went wrong. Try again.");
+    }
+    setEmailOtpLoading(false);
+  };
+
   // Function to handle photo upload to backend
   const handleSavePhoto = async () => {
     if (!profilePhotoPreview) return;
     try {
-      const res = await fetch("http://localhost:8080/uploadProfilePhoto", {
+      const res = await fetch(buildApiUrl("/uploadProfilePhoto"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -372,26 +482,8 @@ export default function Profile() {
           Altar Designer
           <span>Design your own altar with custom backgrounds and sacred decor</span>
         </div>
-        <div
-          style={{
-            minHeight: "100vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            background: "linear-gradient(120deg, #f0f4fd 0%, #e9eafc 100%)",
-          }}
-        >
-          <div
-            style={{
-              marginLeft: "5vw",
-              border: "4px solid #e9eafc",
-              borderTop: "4px solid #2196f3",
-              borderRadius: "50%",
-              width: 48,
-              height: 48,
-              animation: "spin 1s linear infinite",
-            }}
-          />
+        <div className="profile-loading-bg">
+          <div className="profile-loading-spinner" />
           <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
         </div>
       </>
@@ -402,38 +494,17 @@ export default function Profile() {
 
   // SVG icon for link
   const LinkIcon = () => (
-    <svg width="22" height="22" fill="#2196f3" viewBox="0 0 24 24" style={{marginRight: 8, verticalAlign: 'middle'}}><path d="M17 7a5 5 0 0 0-7.07 0l-4.24 4.24a5 5 0 0 0 7.07 7.07l1.06-1.06a1 1 0 1 0-1.42-1.42l-1.06 1.06a3 3 0 1 1-4.24-4.24l4.24-4.24a3 3 0 0 1 4.24 4.24l-.88.88a1 1 0 1 0 1.42 1.42l.88-.88A5 5 0 0 0 17 7z"/></svg>
+    <svg width="22" height="22" fill="#2196f3" viewBox="0 0 24 24" className="profile-link-svg"><path d="M17 7a5 5 0 0 0-7.07 0l-4.24 4.24a5 5 0 0 0 7.07 7.07l1.06-1.06a1 1 0 1 0-1.42-1.42l-1.06 1.06a3 3 0 1 1-4.24-4.24l4.24-4.24a3 3 0 0 1 4.24 4.24l-.88.88a1 1 0 1 0 1.42 1.42l.88-.88A5 5 0 0 0 17 7z"/></svg>
   );
 
   return (
     <>
-      <div className="appHeader" style={{ position: 'relative' }}>
+      <div className="appHeader profile-header">
         Altar Designer
         <span>Design your own altar with custom backgrounds and sacred decor</span>
         <button
           className="profile-settings-btn"
           ref={settingsBtnRef}
-          style={{
-            position: 'absolute',
-            top: 18,
-            right: 32,
-            width: 48,
-            height: 48,
-            background: 'linear-gradient(135deg, #2196f3 60%, #1769aa 100%)',
-            border: 'none',
-            borderRadius: '50%',
-            boxShadow: '0 2px 8px rgba(33,150,243,0.13)',
-            cursor: 'pointer',
-            padding: 0,
-            zIndex: 10,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background 0.2s, box-shadow 0.2s',
-          }}
-          title="Settings"
-          onMouseOver={e => e.currentTarget.style.background = 'linear-gradient(135deg, #1769aa 60%, #2196f3 100%)'}
-          onMouseOut={e => e.currentTarget.style.background = 'linear-gradient(135deg, #2196f3 60%, #1769aa 100%)'}
           onClick={() => setSettingsOpen((open) => !open)}
         >
           <svg width="26" height="26" fill="#fff" viewBox="0 0 24 24">
@@ -444,83 +515,17 @@ export default function Profile() {
         {settingsOpen && (
           <div
             ref={settingsMenuRef}
-            style={{
-              position: 'absolute',
-              top: 58,
-              right: 32,
-              minWidth: 110,
-              background: 'linear-gradient(120deg, #f0f4fd 0%, #e9eafc 100%)',
-              borderRadius: 8,
-              boxShadow: '0 4px 12px rgba(33,150,243,0.10)',
-              zIndex: 20,
-              padding: '0.2em 0.05em',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.07em',
-              border: '1.5px solid #e5e7eb',
-              backdropFilter: 'blur(1px)',
-            }}
+            className="profile-settings-menu"
           >
-            <button style={{
-              background: 'none',
-              border: 'none',
-              textAlign: 'left',
-              padding: '0.35em 0.7em',
-              fontSize: '0.65em',
-              color: '#1769aa',
-              fontWeight: 700,
-              cursor: 'pointer',
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.3em',
-              transition: 'background 0.18s, color 0.18s',
-            }}
-            onMouseOver={e => {e.currentTarget.style.background = '#e3e8f0'; e.currentTarget.style.color = '#2196f3';}}
-            onMouseOut={e => {e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#1769aa';}}
-            onClick={() => {setSettingsOpen(false); openEditModal();}}>
+            <button className="profile-settings-menu-btn" onClick={() => {setSettingsOpen(false); openEditModal();}}>
               <svg width="12" height="12" fill="#2196f3" viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/></svg>
               Edit User
             </button>
-            <button style={{
-              background: 'none',
-              border: 'none',
-              textAlign: 'left',
-              padding: '0.35em 0.7em',
-              fontSize: '0.65em',
-              color: '#1769aa',
-              fontWeight: 700,
-              cursor: 'pointer',
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.3em',
-              transition: 'background 0.18s, color 0.18s',
-            }}
-            onMouseOver={e => {e.currentTarget.style.background = '#e3e8f0'; e.currentTarget.style.color = '#2196f3';}}
-            onMouseOut={e => {e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#1769aa';}}
-            onClick={() => {setSettingsOpen(false); setChangePwdModalOpen(true); setChangePwdError(""); setChangePwdSuccess(""); setOldPassword(""); setNewPassword(""); setConfirmNewPassword("");}}>
+            <button className="profile-settings-menu-btn" onClick={() => {setSettingsOpen(false); setChangePwdModalOpen(true); setChangePwdError(""); setChangePwdSuccess(""); setOldPassword(""); setNewPassword(""); setConfirmNewPassword("");}}>
               <svg width="12" height="12" fill="#2196f3" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2v-2a2 2 0 0 0-4 0v2a2 2 0 0 0 2 2zm6-6V9a6 6 0 0 0-12 0v2a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2zm-8-2a4 4 0 0 1 8 0v2H6V9z"/></svg>
               Change Password
             </button>
-            <button style={{
-              background: 'none',
-              border: 'none',
-              textAlign: 'left',
-              padding: '0.35em 0.7em',
-              fontSize: '0.65em',
-              color: '#1769aa',
-              fontWeight: 700,
-              cursor: 'pointer',
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.3em',
-              transition: 'background 0.18s, color 0.18s',
-            }}
-            onMouseOver={e => {e.currentTarget.style.background = '#e3e8f0'; e.currentTarget.style.color = '#2196f3';}}
-            onMouseOut={e => {e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#1769aa';}}
-            onClick={() => {setSettingsOpen(false); /* TODO: Open subscriptions page */}}>
+            <button className="profile-settings-menu-btn" onClick={() => { setSettingsOpen(false); navigate('/subscriptions'); }}>
               <svg width="12" height="12" fill="#2196f3" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               Subscriptions
             </button>
@@ -529,50 +534,126 @@ export default function Profile() {
       </div>
       {/* Edit User Modal */}
       {editModalOpen && (
-        <div className="admin-draft-preview-modal" style={{zIndex: 2000}}>
-          <div className="admin-draft-preview-content" style={{minWidth: 320, maxWidth: 400}}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
-              <span style={{fontWeight: 700, color: '#1769aa', fontSize: '1.15em'}}>Edit User</span>
-              <button onClick={() => { setEditModalOpen(false); setEditError(""); }} style={{background: 'none', border: 'none', fontSize: 22, color: '#b5b5d6', cursor: 'pointer'}}>×</button>
+        <div className="profile-edit-modal">
+          <div className="profile-edit-modal-content">
+            <div className="profile-edit-modal-header">
+              <span className="profile-edit-modal-title">Edit User Details</span>
+              <button onClick={() => { setEditModalOpen(false); setEditError(""); }} className="profile-edit-modal-close">×</button>
             </div>
-            <form onSubmit={handleEditSubmit} style={{width: '100%', display: 'flex', flexDirection: 'column', gap: '1.1em', marginTop: '1.2em'}}>
-              <label style={{color: '#1769aa', fontWeight: 600}}>Username
-                <input type="text" value={editUsername} onChange={e => setEditUsername(e.target.value)} className="admin-edit-input" style={{width: '100%', marginTop: 4}} required />
-              </label>
-              <label style={{color: '#1769aa', fontWeight: 600}}>Email
-                <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} className="admin-edit-input" style={{width: '100%', marginTop: 4}} required />
-              </label>
-              {editError && <div style={{color: '#b71c1c', fontWeight: 500, fontSize: '0.98em'}}>{editError}</div>}
-              <button type="submit" className="admin-drafts-btn" style={{marginTop: 8}}>Submit</button>
+            <form onSubmit={handleEditSubmit} className="profile-edit-modal-form">
+              <div className="profile-edit-modal-label">
+                <span className="profile-edit-modal-label-text">Username</span>
+                <input 
+                  type="text" 
+                  value={editUsername} 
+                  onChange={e => setEditUsername(e.target.value)} 
+                  className="profile-edit-modal-input" 
+                  placeholder="Enter your username"
+                  required 
+                />
+              </div>
+              <div className="profile-edit-modal-label">
+                <span className="profile-edit-modal-label-text">Email Address</span>
+                <input 
+                  type="email" 
+                  value={editEmail} 
+                  onChange={e => setEditEmail(e.target.value)} 
+                  className="profile-edit-modal-input" 
+                  placeholder="Enter your email address"
+                  required 
+                />
+              </div>
+              {editError && <div className="profile-edit-modal-error">{editError}</div>}
+              <button type="submit" className="profile-edit-modal-submit">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style={{marginRight: '8px'}}>
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                Update Profile
+              </button>
             </form>
           </div>
         </div>
       )}
       {/* Password Prompt Modal */}
       {passwordPromptOpen && (
-        <div className="admin-draft-preview-modal" style={{zIndex: 2100}}>
-          <div className="admin-draft-preview-content" style={{minWidth: 320, maxWidth: 400}}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
-              <span style={{fontWeight: 700, color: '#1769aa', fontSize: '1.1em'}}>Enter Password</span>
-              <button onClick={() => { setPasswordPromptOpen(false); setEditLoading(false); setEditPassword(""); setEditError(""); }} style={{background: 'none', border: 'none', fontSize: 22, color: '#b5b5d6', cursor: 'pointer'}}>×</button>
+        <div className="profile-edit-modal">
+          <div className="profile-edit-modal-content">
+            <div className="profile-edit-modal-header">
+              <span className="profile-edit-modal-title">Security Verification</span>
+              <button onClick={() => { setPasswordPromptOpen(false); setEditLoading(false); setEditPassword(""); setEditError(""); }} className="profile-edit-modal-close">×</button>
             </div>
-            <form onSubmit={handlePasswordSubmit} style={{width: '100%', display: 'flex', flexDirection: 'column', gap: '1.1em', marginTop: '1.2em'}}>
-              <label style={{color: '#1769aa', fontWeight: 600}}>Password
-                <input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} className="admin-edit-input" style={{width: '100%', marginTop: 4}} required autoFocus />
-              </label>
-              {editError && <div style={{color: '#b71c1c', fontWeight: 500, fontSize: '0.98em'}}>{editError}</div>}
-              <button type="submit" className="admin-drafts-btn" style={{marginTop: 8}} disabled={editLoading}>{editLoading ? 'Updating...' : 'Confirm & Update'}</button>
+            <form onSubmit={handlePasswordSubmit} className="profile-edit-modal-form">
+              <div className="profile-edit-modal-label">
+                <span className="profile-edit-modal-label-text">Current Password</span>
+                <input 
+                  type="password" 
+                  value={editPassword} 
+                  onChange={e => setEditPassword(e.target.value)} 
+                  className="profile-edit-modal-input" 
+                  placeholder="Enter your current password"
+                  required 
+                  autoFocus 
+                />
+              </div>
+              {editError && <div className="profile-edit-modal-error">{editError}</div>}
+              <button type="submit" className="profile-edit-modal-submit" disabled={editLoading}>
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style={{marginRight: '8px'}}>
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                {editLoading ? 'Verifying...' : 'Confirm & Update'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Email OTP Modal for Email Change */}
+      {showEmailOtpModal && (
+        <div className="profile-edit-modal">
+          <div className="profile-edit-modal-content">
+            <div className="profile-edit-modal-header">
+              <span className="profile-edit-modal-title">Email Verification</span>
+              <button onClick={() => { setShowEmailOtpModal(false); setEmailOtp(""); setEmailOtpError(""); setPendingNewEmail(""); }} className="profile-edit-modal-close">×</button>
+            </div>
+            <form onSubmit={handleEmailOtpSubmit} className="profile-edit-modal-form">
+              <div style={{textAlign: 'center', marginBottom: '1rem', padding: '1rem', background: 'rgba(33, 150, 243, 0.1)', borderRadius: '12px', border: '1px solid rgba(33, 150, 243, 0.2)'}}>
+                <svg width="24" height="24" fill="#2196f3" viewBox="0 0 24 24" style={{marginBottom: '0.5rem'}}>
+                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+                <div style={{fontWeight: 600, color: '#1769aa', marginBottom: '0.5rem'}}>Verification Code Sent</div>
+                <div style={{fontSize: '0.9rem', color: '#666'}}>We've sent a 6-digit code to:</div>
+                <div style={{fontWeight: 700, color: '#1769aa', marginTop: '0.3rem'}}>{pendingNewEmail}</div>
+              </div>
+              <div className="profile-edit-modal-label">
+                <span className="profile-edit-modal-label-text">Verification Code</span>
+                <input 
+                  type="text" 
+                  value={emailOtp} 
+                  onChange={e => setEmailOtp(e.target.value)} 
+                  className="profile-edit-modal-input" 
+                  placeholder="Enter 6-digit code"
+                  required 
+                  maxLength={6}
+                  style={{textAlign: 'center', letterSpacing: '0.5em', fontSize: '1.2rem', fontWeight: '600'}}
+                />
+              </div>
+              {emailOtpError && <div className="profile-edit-modal-error">{emailOtpError}</div>}
+              <button type="submit" className="profile-edit-modal-submit" disabled={emailOtpLoading}>
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style={{marginRight: '8px'}}>
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                {emailOtpLoading ? 'Verifying...' : 'Verify & Update Email'}
+              </button>
             </form>
           </div>
         </div>
       )}
       {/* Change Password Modal */}
       {changePwdModalOpen && (
-        <div className="admin-draft-preview-modal" style={{zIndex: 2200}}>
-          <div className="admin-draft-preview-content" style={{minWidth: 320, maxWidth: 400}}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
-              <span style={{fontWeight: 700, color: '#1769aa', fontSize: '1.1em'}}>Change Password</span>
-              <button onClick={() => { setChangePwdModalOpen(false); setChangePwdError(""); setChangePwdSuccess(""); }} style={{background: 'none', border: 'none', fontSize: 22, color: '#b5b5d6', cursor: 'pointer'}}>×</button>
+        <div className="profile-edit-modal">
+          <div className="profile-edit-modal-content">
+            <div className="profile-edit-modal-header">
+              <span className="profile-edit-modal-title">Change Password</span>
+              <button onClick={() => { setChangePwdModalOpen(false); setChangePwdError(""); setChangePwdSuccess(""); }} className="profile-edit-modal-close">×</button>
             </div>
             <form onSubmit={async (e) => {
               e.preventDefault();
@@ -586,13 +667,13 @@ export default function Profile() {
                 setChangePwdError("New passwords do not match");
                 return;
               }
-              if (newPassword.length < 6) {
-                setChangePwdError("New password must be at least 6 characters");
+              if (!newPasswordValidation.isValid) {
+                setChangePwdError("Please fix password requirements before changing password.");
                 return;
               }
               setChangePwdLoading(true);
               try {
-                const res = await fetch("http://localhost:8080/changePassword", {
+                const res = await fetch(buildApiUrl("/changePassword"), {
                   method: "PUT",
                   headers: {
                     "Content-Type": "application/json",
@@ -625,40 +706,205 @@ export default function Profile() {
                 setChangePwdError("Something went wrong. Try again.");
                 setChangePwdLoading(false);
               }
-            }} style={{width: '100%', display: 'flex', flexDirection: 'column', gap: '1.1em', marginTop: '1.2em'}}>
-              <label style={{color: '#1769aa', fontWeight: 600}}>Old Password
-                <input type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} className="admin-edit-input" style={{width: '100%', marginTop: 4}} required autoFocus />
-              </label>
-              <label style={{color: '#1769aa', fontWeight: 600}}>New Password
-                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="admin-edit-input" style={{width: '100%', marginTop: 4}} required />
-              </label>
-              <label style={{color: '#1769aa', fontWeight: 600}}>Confirm New Password
-                <input type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} className="admin-edit-input" style={{width: '100%', marginTop: 4}} required />
-              </label>
-              {changePwdError && <div style={{color: '#b71c1c', fontWeight: 500, fontSize: '0.98em'}}>{changePwdError}</div>}
-              {changePwdSuccess && <div style={{color: '#388e3c', fontWeight: 600, fontSize: '0.98em'}}>{changePwdSuccess}</div>}
-              <button type="submit" className="admin-drafts-btn" style={{marginTop: 8}} disabled={changePwdLoading}>{changePwdLoading ? 'Updating...' : 'Change Password'}</button>
+            }} className="profile-edit-modal-form">
+              <div className="profile-edit-modal-label">
+                <span className="profile-edit-modal-label-text">Current Password</span>
+                <input 
+                  type="password" 
+                  value={oldPassword} 
+                  onChange={e => setOldPassword(e.target.value)} 
+                  className="profile-edit-modal-input" 
+                  placeholder="Enter your current password"
+                  required 
+                  autoFocus 
+                />
+              </div>
+              <div className="profile-edit-modal-label">
+                <span className="profile-edit-modal-label-text">New Password</span>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showNewPassword ? "text" : "password"} 
+                    value={newPassword} 
+                    onChange={handleNewPasswordChange}
+                    className="profile-edit-modal-input" 
+                    placeholder="Enter your new password"
+                    required 
+                    style={{ 
+                      border: `2px solid ${newPasswordValidation.isValid ? '#4caf50' : newPassword.length > 0 ? '#f44336' : 'rgba(33, 150, 243, 0.2)'}`,
+                      paddingRight: '3.5em'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '1.2em',
+                      color: '#666',
+                      padding: '4px',
+                      borderRadius: '4px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = 'rgba(0,0,0,0.1)'}
+                    onMouseLeave={(e) => e.target.style.background = 'none'}
+                  >
+                    {showNewPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+              {newPassword.length > 0 && (
+                <div style={{ 
+                  marginBottom: '1rem',
+                  padding: '1rem',
+                  background: 'rgba(33, 150, 243, 0.05)',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(33, 150, 243, 0.1)'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5em', 
+                    marginBottom: '0.8em',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#1769aa'
+                  }}>
+                    <span>Password Strength:</span>
+                    <span style={{ 
+                      color: getPasswordStrengthColor(newPasswordValidation.strength),
+                      fontWeight: 'bold'
+                    }}>
+                      {getPasswordStrengthText(newPasswordValidation.strength)}
+                    </span>
+                  </div>
+                  <div style={{ 
+                    height: '6px', 
+                    background: '#e0e0e0', 
+                    borderRadius: '3px',
+                    overflow: 'hidden',
+                    marginBottom: '0.8em'
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      background: getPasswordStrengthColor(newPasswordValidation.strength),
+                      width: newPasswordValidation.strength === 'weak' ? '25%' : 
+                            newPasswordValidation.strength === 'medium' ? '50%' : 
+                            newPasswordValidation.strength === 'strong' ? '75%' : '100%',
+                      transition: 'width 0.3s ease',
+                      borderRadius: '3px'
+                    }} />
+                  </div>
+                  {newPasswordValidation.errors.length > 0 && (
+                    <div style={{ 
+                      fontSize: '0.9rem', 
+                      color: '#f44336',
+                      lineHeight: '1.4'
+                    }}>
+                      {newPasswordValidation.errors.map((error, index) => (
+                        <div key={index} style={{ 
+                          marginBottom: '0.3em',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5em'
+                        }}>
+                          <span style={{color: '#f44336', fontSize: '0.8em'}}>•</span>
+                          {error}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="profile-edit-modal-label">
+                <span className="profile-edit-modal-label-text">Confirm New Password</span>
+                <input 
+                  type="password" 
+                  value={confirmNewPassword} 
+                  onChange={e => setConfirmNewPassword(e.target.value)} 
+                  className="profile-edit-modal-input" 
+                  placeholder="Confirm your new password"
+                  required 
+                  style={{ 
+                    border: `2px solid ${newPassword === confirmNewPassword && confirmNewPassword.length > 0 ? '#4caf50' : confirmNewPassword.length > 0 ? '#f44336' : 'rgba(33, 150, 243, 0.2)'}`
+                  }}
+                />
+              </div>
+              {changePwdError && <div className="profile-edit-modal-error">{changePwdError}</div>}
+              {changePwdSuccess && (
+                <div style={{
+                  color: '#4caf50',
+                  fontWeight: '600',
+                  fontSize: '0.95rem',
+                  padding: '0.8rem 1rem',
+                  background: 'rgba(76, 175, 80, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(76, 175, 80, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span style={{fontSize: '1.2em'}}>✅</span>
+                  {changePwdSuccess}
+                </div>
+              )}
+              <button type="submit" className="profile-edit-modal-submit" disabled={changePwdLoading}>
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style={{marginRight: '8px'}}>
+                  <path d="M12 17a2 2 0 0 0 2-2v-2a2 2 0 0 0-4 0v2a2 2 0 0 0 2 2zm6-6V9a6 6 0 0 0-12 0v2a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2zm-8-2a4 4 0 0 1 8 0v2H6V9z"/>
+                </svg>
+                {changePwdLoading ? 'Updating Password...' : 'Change Password'}
+              </button>
+              <button 
+                type="button" 
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#1769aa', 
+                  fontWeight: '600', 
+                  fontSize: '1rem', 
+                  cursor: 'pointer', 
+                  marginTop: '1rem', 
+                  textDecoration: 'underline', 
+                  transition: 'color 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem',
+                  borderRadius: '8px',
+                  alignSelf: 'center'
+                }} 
+                onMouseEnter={(e) => e.target.style.color = '#2196f3'}
+                onMouseLeave={(e) => e.target.style.color = '#1769aa'}
+                onClick={() => { setChangePwdModalOpen(false); navigate('/forgot-password', { state: { email: user.email } }); }}
+              >
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Forgot Password?
+              </button>
             </form>
           </div>
         </div>
       )}
       {/* Email Modal for Authorized View Only */}
       {showEmailModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.18)', zIndex: 9999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 32, minWidth: 340, boxShadow: '0 4px 24px rgba(33,150,243,0.13)' }}>
-            <h3 style={{ color: '#1769aa', fontWeight: 700, marginBottom: 16 }}>Enter allowed emails (press Enter after each)</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+        <div className="profile-modal-overlay">
+          <div className="profile-modal-card-wide">
+            <h3 className="profile-email-modal-header">Enter allowed emails (press Enter after each)</h3>
+            <div className="profile-email-chips-row">
               {viewEmails.map((email, idx) => (
-                <span key={idx} style={{ background: '#e9eafc', color: '#1769aa', padding: '4px 10px', borderRadius: 16, display: 'flex', alignItems: 'center', fontSize: 15 }}>
+                <span key={idx} className="profile-chip">
                   {email}
                   <button onClick={() => {
                     const newEmails = viewEmails.filter((e, i) => i !== idx);
                     setViewEmails(newEmails);
                     if (newEmails.length === 0) setGeneratedViewLink("");
-                  }} style={{ marginLeft: 6, background: 'none', border: 'none', color: '#b71c1c', fontWeight: 700, cursor: 'pointer', fontSize: 16 }}>&times;</button>
+                  }} className="profile-chip-remove">&times;</button>
                 </span>
               ))}
             </div>
@@ -685,27 +931,29 @@ export default function Profile() {
                 }
               }}
               placeholder="Type email and press Enter"
-              style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e5e7eb', fontSize: 16, marginBottom: 8, background: '#fff', color: '#1769aa' }}
+              className="profile-email-input"
             />
-            {viewEmailError && <div style={{ color: '#b71c1c', marginBottom: 8 }}>{viewEmailError}</div>}
+            {viewEmailError && <div className="profile-email-error">{viewEmailError}</div>}
             {generatedViewLink && (
-              <div style={{ margin: '16px 0 8px 0', wordBreak: 'break-all', background: '#f0f4fd', padding: 18, borderRadius: 12, boxShadow: '0 2px 8px rgba(33,150,243,0.10)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+              <div className="profile-link-modal-box">
+                <div className="profile-link-modal-header">
                   <LinkIcon />
-                  <span style={{ fontSize: 16, color: '#1769aa', fontWeight: 700 }}>Invite-Only View Link</span>
+                  <span className="profile-link-modal-title">Invite-Only View Link</span>
                 </div>
-                <div style={{ fontFamily: 'monospace', fontSize: 15, marginBottom: 14, wordBreak: 'break-all', color: '#1769aa', border: '1.5px solid #e5e7eb', background: '#fff', padding: 10, borderRadius: 8 }}>{generatedViewLink}</div>
+                <div className="profile-link-modal-linkbox">
+                  <div className="profile-share-linkbox">
+                    {generatedViewLink}
+                  </div>
+                </div>
                 <button
                   onClick={() => { navigator.clipboard.writeText(generatedViewLink); setCopyMsg('Copied!'); setTimeout(() => setCopyMsg(''), 1200); }}
-                  style={{ padding: '0.7em 2em', borderRadius: 8, border: 'none', background: 'linear-gradient(90deg, #2196f3 0%, #1769aa 100%)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 16, boxShadow: '0 2px 8px rgba(33,150,243,0.10)', transition: 'background 0.2s, color 0.2s' }}
-                  onMouseOver={e => e.currentTarget.style.background = 'linear-gradient(90deg, #1769aa 0%, #2196f3 100%)'}
-                  onMouseOut={e => e.currentTarget.style.background = 'linear-gradient(90deg, #2196f3 0%, #1769aa 100%)'}
+                  className="profile-link-copy"
                 >Copy</button>
-                {copyMsg && <span style={{ color: '#43e97b', marginLeft: 10, fontWeight: 600 }}>{copyMsg}</span>}
+                {copyMsg && <span className="profile-share-copymsg">{copyMsg}</span>}
               </div>
             )}
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button onClick={() => { setShowEmailModal(false); setViewEmails([]); setEmailInput(""); setViewEmailError(""); setGeneratedViewLink(""); setViewLinkLoading(false); setPendingWallId(null); }} style={{ padding: '0.6em 1.5em', borderRadius: 8, border: 'none', background: '#e0e0e0', color: '#1769aa', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+            <div className="profile-link-modal-btn-row">
+              <button onClick={() => { setShowEmailModal(false); setViewEmails([]); setEmailInput(""); setViewEmailError(""); setGeneratedViewLink(""); setViewLinkLoading(false); setPendingWallId(null); }} className="profile-link-modal-cancel">Cancel</button>
               <button
                 onClick={() => {
                   if (emailInput.trim()) {
@@ -729,7 +977,7 @@ export default function Profile() {
                   handleAuthorizedViewShare(pendingWallId, viewEmails);
                   // Do not close modal or reset state here; let user see the link and close manually
                 }}
-                style={{ padding: '0.6em 1.5em', borderRadius: 8, border: 'none', background: 'linear-gradient(90deg, #2196f3 0%, #1769aa 100%)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                className="profile-link-modal-copy"
                 disabled={viewLinkLoading}
               >
                 {viewLinkLoading ? 'Generating...' : 'Generate Link'}</button>
@@ -739,21 +987,18 @@ export default function Profile() {
       )}
       {/* Email Modal for Authorized Edit Only */}
       {showEditEmailModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.18)', zIndex: 9999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 32, minWidth: 340, boxShadow: '0 4px 24px rgba(33,150,243,0.13)' }}>
-            <h3 style={{ color: '#1769aa', fontWeight: 700, marginBottom: 16 }}>Enter allowed emails for editing (press Enter after each)</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+        <div className="profile-modal-overlay">
+          <div className="profile-modal-card-wide">
+            <h3 className="profile-email-modal-header">Enter allowed emails for editing (press Enter after each)</h3>
+            <div className="profile-email-chips-row">
               {editEmails.map((email, idx) => (
-                <span key={idx} style={{ background: '#e9eafc', color: '#1769aa', padding: '4px 10px', borderRadius: 16, display: 'flex', alignItems: 'center', fontSize: 15 }}>
+                <span key={idx} className="profile-chip">
                   {email}
                   <button onClick={() => {
                     const newEmails = editEmails.filter((e, i) => i !== idx);
                     setEditEmails(newEmails);
                     if (newEmails.length === 0) setGeneratedEditLink("");
-                  }} style={{ marginLeft: 6, background: 'none', border: 'none', color: '#b71c1c', fontWeight: 700, cursor: 'pointer', fontSize: 16 }}>&times;</button>
+                  }} className="profile-chip-remove">&times;</button>
                 </span>
               ))}
             </div>
@@ -780,27 +1025,29 @@ export default function Profile() {
                 }
               }}
               placeholder="Type email and press Enter"
-              style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e5e7eb', fontSize: 16, marginBottom: 8, background: '#fff', color: '#1769aa' }}
+              className="profile-email-input"
             />
-            {editEmailError && <div style={{ color: '#b71c1c', marginBottom: 8 }}>{editEmailError}</div>}
+            {editEmailError && <div className="profile-email-error">{editEmailError}</div>}
             {generatedEditLink && (
-              <div style={{ margin: '16px 0 8px 0', wordBreak: 'break-all', background: '#f0f4fd', padding: 18, borderRadius: 12, boxShadow: '0 2px 8px rgba(33,243,150,0.10)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+              <div className="profile-link-modal-box">
+                <div className="profile-link-modal-header">
                   <LinkIcon />
-                  <span style={{ fontSize: 16, color: '#1769aa', fontWeight: 700 }}>Invite-Only Edit Link</span>
+                  <span className="profile-link-modal-title">Invite-Only Edit Link</span>
                 </div>
-                <div style={{ fontFamily: 'monospace', fontSize: 15, marginBottom: 14, wordBreak: 'break-all', color: '#1769aa', border: '1.5px solid #e5e7eb', background: '#fff', padding: 10, borderRadius: 8 }}>{generatedEditLink}</div>
+                <div className="profile-link-modal-linkbox">
+                  <div className="profile-share-linkbox profile-share-linkbox-alt">
+                    {generatedEditLink}
+                  </div>
+                </div>
                 <button
                   onClick={() => { navigator.clipboard.writeText(generatedEditLink); setCopyMsg('Copied!'); setTimeout(() => setCopyMsg(''), 1200); }}
-                  style={{ padding: '0.7em 2em', borderRadius: 8, border: 'none', background: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)', color: '#1769aa', fontWeight: 700, cursor: 'pointer', fontSize: 16, boxShadow: '0 2px 8px rgba(33,243,150,0.10)', transition: 'background 0.2s, color 0.2s' }}
-                  onMouseOver={e => e.currentTarget.style.background = 'linear-gradient(90deg, #38f9d7 0%, #43e97b 100%)'}
-                  onMouseOut={e => e.currentTarget.style.background = 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)'}
+                  className="profile-link-copy profile-link-copy-edit"
                 >Copy</button>
-                {copyMsg && <span style={{ color: '#43e97b', marginLeft: 10, fontWeight: 600 }}>{copyMsg}</span>}
+                {copyMsg && <span className="profile-share-copymsg">{copyMsg}</span>}
               </div>
             )}
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button onClick={() => { setShowEditEmailModal(false); setEditEmails([]); setEditEmailInput(""); setEditEmailError(""); setGeneratedEditLink(""); setEditLinkLoading(false); setPendingEditWallId(null); }} style={{ padding: '0.6em 1.5em', borderRadius: 8, border: 'none', background: '#e0e0e0', color: '#1769aa', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+            <div className="profile-link-modal-btn-row">
+              <button onClick={() => { setShowEditEmailModal(false); setEditEmails([]); setEditEmailInput(""); setEditEmailError(""); setGeneratedEditLink(""); setEditLinkLoading(false); setPendingEditWallId(null); }} className="profile-link-modal-cancel">Cancel</button>
               <button
                 onClick={() => {
                   if (editEmailInput.trim()) {
@@ -824,7 +1071,7 @@ export default function Profile() {
                   handleAuthorizedEditShare(pendingEditWallId, editEmails);
                   // Do not close modal or reset state here; let user see the link and close manually
                 }}
-                style={{ padding: '0.6em 1.5em', borderRadius: 8, border: 'none', background: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)', color: '#1769aa', fontWeight: 700, cursor: 'pointer' }}
+                className="profile-link-modal-copy"
                 disabled={editLinkLoading}
               >
                 {editLinkLoading ? 'Generating...' : 'Generate Link'}</button>
@@ -834,99 +1081,83 @@ export default function Profile() {
       )}
       {/* Unauthorized View Link Modal */}
       {generatedUnauthorizedViewLink && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.18)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 18, padding: 36, minWidth: 340, maxWidth: 420, boxShadow: '0 8px 32px rgba(33,150,243,0.13)', position: 'relative', width: '90vw' }}>
-           <button onClick={() => setGeneratedUnauthorizedViewLink("")} style={{ position: 'absolute', top: 14, right: 18, background: 'none', border: 'none', fontSize: 26, color: '#b5b5d6', cursor: 'pointer', fontWeight: 700, zIndex: 2 }} title="Close">×</button>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+        <div className="profile-modal-overlay">
+          <div className="profile-modal-card-wide">
+           <button onClick={() => setGeneratedUnauthorizedViewLink("")} className="profile-share-close" title="Close">×</button>
+            <div className="profile-share-header">
              <LinkIcon />
-              <span style={{ fontSize: 18, color: '#1769aa', fontWeight: 700 }}>Shareable Link</span>
+              <span className="profile-share-title">Shareable Link</span>
             </div>
-            <div style={{ fontFamily: 'monospace', fontSize: 15, marginBottom: 14, wordBreak: 'break-all', background: '#f0f4fd', padding: 12, borderRadius: 8, color: '#1769aa', border: '1.5px solid #e5e7eb' }}>{generatedUnauthorizedViewLink}</div>
+            <div className="profile-share-linkbox">
+              {generatedUnauthorizedViewLink}
+            </div>
             <button
               onClick={() => { navigator.clipboard.writeText(generatedUnauthorizedViewLink); setCopyMsg('Copied!'); setTimeout(() => setCopyMsg(''), 1200); }}
-              style={{ padding: '0.7em 2em', borderRadius: 8, border: 'none', background: 'linear-gradient(90deg, #2196f3 0%, #1769aa 100%)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 16, boxShadow: '0 2px 8px rgba(33,150,243,0.10)', transition: 'background 0.2s, color 0.2s' }}
-              onMouseOver={e => e.currentTarget.style.background = 'linear-gradient(90deg, #1769aa 0%, #2196f3 100%)'}
-              onMouseOut={e => e.currentTarget.style.background = 'linear-gradient(90deg, #2196f3 0%, #1769aa 100%)'}
+              className="profile-link-copy"
             >Copy</button>
-            {copyMsg && <span style={{ color: '#43e97b', marginLeft: 10, fontWeight: 600 }}>{copyMsg}</span>}
+            {copyMsg && <span className="profile-share-copymsg">{copyMsg}</span>}
           </div>
         </div>
       )}
       {/* Unauthorized Edit Link Modal */}
       {generatedUnauthorizedEditLink && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.18)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 18, padding: 36, minWidth: 340, maxWidth: 420, boxShadow: '0 8px 32px rgba(33,243,150,0.13)', position: 'relative', width: '90vw' }}>
-           <button onClick={() => setGeneratedUnauthorizedEditLink("")} style={{ position: 'absolute', top: 14, right: 18, background: 'none', border: 'none', fontSize: 26, color: '#b5b5d6', cursor: 'pointer', fontWeight: 700, zIndex: 2 }} title="Close">×</button>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+        <div className="profile-modal-overlay">
+          <div className="profile-modal-card-wide">
+           <button onClick={() => setGeneratedUnauthorizedEditLink("")} className="profile-share-close" title="Close">×</button>
+            <div className="profile-share-header">
              <LinkIcon />
-              <span style={{ fontSize: 18, color: '#1769aa', fontWeight: 700 }}>Shareable Link</span>
+              <span className="profile-share-title">Shareable Link</span>
             </div>
-            <div style={{ fontFamily: 'monospace', fontSize: 15, marginBottom: 14, wordBreak: 'break-all', background: '#f0f4fd', padding: 12, borderRadius: 8, color: '#1769aa', border: '1.5px solid #e5e7eb' }}>{generatedUnauthorizedEditLink}</div>
+            <div className="profile-share-linkbox profile-share-linkbox-alt">
+              {generatedUnauthorizedEditLink}
+            </div>
             <button
               onClick={() => { navigator.clipboard.writeText(generatedUnauthorizedEditLink); setCopyMsg('Copied!'); setTimeout(() => setCopyMsg(''), 1200); }}
-              style={{ padding: '0.7em 2em', borderRadius: 8, border: 'none', background: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)', color: '#1769aa', fontWeight: 700, cursor: 'pointer', fontSize: 16, boxShadow: '0 2px 8px rgba(33,243,150,0.10)', transition: 'background 0.2s, color 0.2s' }}
-              onMouseOver={e => e.currentTarget.style.background = 'linear-gradient(90deg, #38f9d7 0%, #43e97b 100%)'}
-              onMouseOut={e => e.currentTarget.style.background = 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)'}
+              className="profile-link-copy profile-link-copy-edit"
             >Copy</button>
-            {copyMsg && <span style={{ color: '#43e97b', marginLeft: 10, fontWeight: 600 }}>{copyMsg}</span>}
+            {copyMsg && <span className="profile-share-copymsg">{copyMsg}</span>}
           </div>
         </div>
       )}
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "flex-start",
-          background: "linear-gradient(120deg, #f0f4fd 0%, #e9eafc 100%)",
-        }}
-      >
-        {/* Profile Card */}
-        <div
-          style={{
-            marginLeft: "5vw",
-            height: "100vh",
-            background: "linear-gradient(135deg, #fff 60%, #e9eafc 100%)",
-            boxShadow: "0 8px 32px rgba(33,150,243,0.13)",
-            borderRadius: "22px",
-            padding: "2.5rem 2.8rem",
-            maxWidth: 420,
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "1.5em",
-            justifyContent: "space-between",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "1.5em",
-            }}
-          >
-            <div
-              style={{
-                width: 100,
-                height: 100,
-                borderRadius: "50%",
-                background: !profilePhotoPreview
-                  ? "linear-gradient(135deg, #2196f3 60%, #1769aa 100%)"
-                  : undefined,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "0.5em",
-                boxShadow: isPhotoHover ? "0 0 0 4px #2196f3, 0 2px 12px rgba(33,150,243,0.13)" : "0 2px 12px rgba(33,150,243,0.10)",
-                position: 'relative',
-                overflow: 'hidden',
-                border: isPhotoHover ? '2.5px solid #2196f3' : '2.5px solid #e9eafc',
-                transition: 'box-shadow 0.2s, border 0.2s',
-                cursor: 'pointer',
+      {/* Payment Modal */}
+      <Subscriptions
+        open={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        currentPlan={subscription}
+        onUpgrade={setSubscription}
+      />
+      {showUpgradeModal && (
+        <div className="profile-payment-modal">
+          <div className="subscriptions-modal-content" style={{maxWidth: 400, minWidth: 320, width: '100%'}}>
+            <h2 className="subscriptions-title" style={{fontSize: '1.2em', marginBottom: 18}}>Upgrade to Premium</h2>
+            <div style={{color: '#b71c1c', marginBottom: 18, fontWeight: 600}}>
+              {upgradeMessage || "Only 3 drafts for free users. If you want more, please upgrade."}
+            </div>
+            <button
+              className="subscriptions-plan-btn premium"
+              onClick={() => {
+                setShowUpgradeModal(false);
+                navigate('/subscriptions');
               }}
+            >
+              Upgrade Now
+            </button>
+            <button
+              className="profile-link-modal-cancel"
+              style={{marginTop: 12}}
+              onClick={() => setShowUpgradeModal(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="profile-bg-main">
+        {/* Profile Card */}
+        <div className="profile-card">
+          <div className="profile-photo-container">
+            <div
+              className={`profile-photo-wrapper ${isPhotoHover ? 'profile-photo-hover' : ''}`}
               title="Profile Photo"
               onMouseEnter={() => setIsPhotoHover(true)}
               onMouseLeave={() => setIsPhotoHover(false)}
@@ -935,7 +1166,7 @@ export default function Profile() {
                 <img
                   src={profilePhotoPreview.startsWith('data:') ? profilePhotoPreview : `data:image/*;base64,${profilePhotoPreview}`}
                   alt="Profile"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  className="profile-photo-img"
                 />
               ) : (
                 <svg width="54" height="54" fill="#fff" viewBox="0 0 24 24">
@@ -946,28 +1177,9 @@ export default function Profile() {
             <button
               type="button"
               onClick={() => fileInputRef.current && fileInputRef.current.click()}
-              style={{
-                marginTop: 0,
-                marginBottom: '0.5em',
-                background: 'linear-gradient(90deg, #2196f3 0%, #1769aa 100%)',
-                color: '#fff',
-                fontWeight: 700,
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontSize: '1em',
-                boxShadow: '0 2px 8px rgba(33,150,243,0.10)',
-                letterSpacing: '0.01em',
-                padding: '0.7em 1.5em',
-                transition: 'background 0.2s, color 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
+              className="profile-btn profile-photo-upload-btn"
             >
-              <svg width="20" height="20" fill="#fff" viewBox="0 0 24 24" style={{marginRight: 6}}>
-                <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm8-10h-3.17l-1.84-2.63A2 2 0 0 0 13.42 3h-2.84a2 2 0 0 0-1.57.87L7.17 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm-8 10a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/>
-              </svg>
+              <svg width="20" height="20" fill="#fff" viewBox="0 0 24 24" className="profile-btn-svg"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm8-10h-3.17l-1.84-2.63A2 2 0 0 0 13.42 3h-2.84a2 2 0 0 0-1.57.87L7.17 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm-8 10a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg>
               {profilePhotoPreview ? 'Change Photo' : 'Upload Photo'}
               <input
                 type="file"
@@ -989,132 +1201,32 @@ export default function Profile() {
               type="button"
               onClick={handleSavePhoto}
               disabled={!profilePhotoPreview}
-              style={{
-                background: profilePhotoPreview ? 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)' : '#e0e0e0',
-                color: profilePhotoPreview ? '#1769aa' : '#b5b5d6',
-                fontWeight: 700,
-                border: 'none',
-                borderRadius: '10px',
-                cursor: profilePhotoPreview ? 'pointer' : 'not-allowed',
-                fontSize: '1em',
-                boxShadow: profilePhotoPreview ? '0 2px 8px rgba(33,243,150,0.10)' : 'none',
-                letterSpacing: '0.01em',
-                padding: '0.7em 1.5em',
-                marginBottom: '1em',
-                transition: 'background 0.2s, color 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
+              className="profile-btn profile-save-photo-btn"
             >
-              <svg width="20" height="20" fill={profilePhotoPreview ? '#1769aa' : '#b5b5d6'} viewBox="0 0 24 24" style={{marginRight: 6}}>
-                <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <svg width="20" height="20" fill={profilePhotoPreview ? '#1769aa' : '#b5b5d6'} viewBox="0 0 24 24" className="profile-btn-svg"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
               Save Photo
             </button>
-            <h1
-              style={{
-                color: "#1769aa",
-                fontWeight: 800,
-                fontSize: "2em",
-                marginBottom: "0.2em",
-                letterSpacing: "0.01em",
-              }}
-            >
+            <h1 className="profile-title">
               Profile
             </h1>
-            <div
-              style={{
-                width: "100%",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.2em",
-              }}
-            >
-              <div
-                style={{
-                  background: "#e9eafc",
-                  padding: "1.1em",
-                  borderRadius: "10px",
-                  boxShadow: "0 1px 4px rgba(33,150,243,0.06)",
-                  width: "100%",
-                }}
-              >
-                <span
-                  style={{
-                    color: "#1769aa",
-                    fontWeight: 700,
-                    fontSize: "1.08em",
-                  }}
-                >
-                  User ID
+            <div className="profile-info-card"><span className="profile-info-label">User ID</span><div className="profile-info-value">{user.id}</div></div>
+            <div className="profile-info-card"><span className="profile-info-label">Username</span><div className="profile-info-value">{user.username}</div></div>
+            <div className="profile-info-card"><span className="profile-info-label">Email</span><div className="profile-info-value">{user.email}</div></div>
+            <div className="profile-subscription-row">
+              <span className={`profile-subscription-badge${subscription === 'premium' ? ' pro' : subscription === 'pro' ? ' pro' : ''}`}>
+                {subscription === 'premium' ? 'Premium' : subscription === 'pro' ? 'Pro' : 'Free'}
+              </span>
+              {subscriptionExpires && (
+                <span style={{marginLeft: 12, fontWeight: 400, color: '#888', fontSize: '0.98em'}}>
+                  (Expires: {formatExpiry(subscriptionExpires)})
                 </span>
-                <div
-                  style={{
-                    fontSize: "1.13em",
-                    marginTop: "0.3em",
-                    fontWeight: 500,
-                  }}
-                >
-                  {user.id}
-                </div>
-              </div>
-              <div
-                style={{
-                  background: "#e9eafc",
-                  padding: "1.1em",
-                  borderRadius: "10px",
-                  boxShadow: "0 1px 4px rgba(33,150,243,0.06)",
-                  width: "100%",
-                }}
-              >
-                <span
-                  style={{
-                    color: "#1769aa",
-                    fontWeight: 700,
-                    fontSize: "1.08em",
-                  }}
-                >
-                  Username
-                </span>
-                <div
-                  style={{
-                    fontSize: "1.13em",
-                    marginTop: "0.3em",
-                    fontWeight: 500,
-                  }}
-                >
-                  {user.username}
-                </div>
-              </div>
-              <div
-                style={{
-                  background: "#e9eafc",
-                  padding: "1.1em",
-                  borderRadius: "10px",
-                  boxShadow: "0 1px 4px rgba(33,150,243,0.06)",
-                  width: "100%",
-                }}
-              >
-                <span
-                  style={{
-                    color: "#1769aa",
-                    fontWeight: 700,
-                    fontSize: "1.08em",
-                  }}
-                >
-                  Email
-                </span>
-                <div
-                  style={{
-                    fontSize: "1.13em",
-                    marginTop: "0.3em",
-                    fontWeight: 500,
-                  }}
-                >
-                  {user.email}
-                </div>
-              </div>
+              )}
+              {subscription === 'free' && (
+                <button className="profile-upgrade-btn" onClick={() => setShowPaymentModal(true)}>Upgrade to Pro</button>
+              )}
+              {subscription === 'pro' && (
+                <button className="profile-upgrade-btn" onClick={() => setShowPaymentModal(true)}>Upgrade to Premium</button>
+              )}
             </div>
           </div>
           {/* Button Group: Delete User and Logout */}
@@ -1124,7 +1236,7 @@ export default function Profile() {
                 const password = prompt("Please enter your password to delete your account:");
                 if (!password) return;
                 try {
-                  const res = await fetch("http://localhost:8080/deleteUser", {
+                  const res = await fetch(buildApiUrl("/deleteUser"), {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
                     body: JSON.stringify({ username: user.username, password }),
@@ -1146,22 +1258,7 @@ export default function Profile() {
                   alert("Something went wrong while deleting the user.");
                 }
               }}
-              style={{
-                width: "100%",
-                padding: "1em 2.2em",
-                background: "linear-gradient(90deg, #b71c1c 0%, #ff4d4d 100%)",
-                color: "#fff",
-                fontWeight: 700,
-                border: "none",
-                borderRadius: "12px",
-                cursor: "pointer",
-                fontSize: "1.13em",
-                boxShadow: "0 2px 8px rgba(183,28,28,0.10)",
-                letterSpacing: "0.01em",
-                transition: "background 0.2s, color 0.2s, transform 0.15s",
-              }}
-              onMouseOver={e => (e.currentTarget.style.background = "linear-gradient(90deg, #ff4d4d 0%, #b71c1c 100%)")}
-              onMouseOut={e => (e.currentTarget.style.background = "linear-gradient(90deg, #b71c1c 0%, #ff4d4d 100%)")}
+              className="profile-btn profile-btn-delete"
             >
               Delete User
             </button>
@@ -1170,93 +1267,45 @@ export default function Profile() {
               localStorage.removeItem("user");
               navigate("/Login");
             }}
-            style={{
-                width: "100%",
-              padding: "1em 2.2em",
-              background: "linear-gradient(90deg, #ff4d4d 0%, #ff7b7b 100%)",
-              color: "#fff",
-              fontWeight: 700,
-              border: "none",
-              borderRadius: "12px",
-              cursor: "pointer",
-              fontSize: "1.13em",
-              boxShadow: "0 2px 8px rgba(255,77,77,0.10)",
-              letterSpacing: "0.01em",
-              transition: "background 0.2s, color 0.2s, transform 0.15s",
-            }}
-              onMouseOver={e => (e.currentTarget.style.background = "linear-gradient(90deg, #ff7b7b 0%, #ff4d4d 100%)")}
-              onMouseOut={e => (e.currentTarget.style.background = "linear-gradient(90deg, #ff4d4d 0%, #ff7b7b 100%)")}
+            className="profile-btn profile-btn-logout"
           >
             Logout
           </button>
           </div>
         </div>
         {/* Drafts Section OUTSIDE profile card */}
-        <div
-          style={{
-            flex: 1,
-            marginLeft: "3vw",
-            marginTop: "2.5em",
-            maxWidth: 700,
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: "18px",
-              boxShadow: "0 2px 12px rgba(33,150,243,0.08)",
-              padding: "2.2em 2.5em",
-              border: "1.5px solid #e5e7eb",
-              width: "100%",
-            }}
-          >
-            <h2
-              style={{
-                color: "#1769aa",
-                fontWeight: 800,
-                fontSize: "1.5em",
-                marginBottom: "1.2em",
-              }}
-            >
-              Your Drafts
-            </h2>
-            {drafts.length === 0 ? (
-              <div style={{ color: "#b5b5d6", fontStyle: "italic" }}>
-                No drafts saved yet.
+        <div className="profile-drafts-section">
+          <div className="profile-drafts-inner">
+            <h2 className="profile-drafts-title">Your Drafts</h2>
+            {!anySharingEnabled && (
+              <div style={{ 
+                color: '#b71c1c', 
+                fontWeight: 600, 
+                fontSize: '0.9em', 
+                marginBottom: '1em',
+                padding: '0.8em',
+                background: '#ffebee',
+                borderRadius: '8px',
+                border: '1px solid #ffcdd2'
+              }}>
+                ⚠️ Sharing is disabled for your current plan. Upgrade to enable sharing features.
               </div>
+            )}
+            {drafts.length === 0 ? (
+              <div className="profile-drafts-empty">No drafts saved yet.</div>
             ) : (
-              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              <ul className="profile-drafts-list">
                 {drafts.map((draft, idx) => (
                   <li
                     key={draft.timestamp}
-                    style={{
-                      background: "#f0f4fd",
-                      marginBottom: "0.7em",
-                      borderRadius: "8px",
-                      padding: "0.8em 1em",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      boxShadow: "0 1px 4px rgba(33,150,243,0.06)",
-                    }}
+                    className="profile-draft-card"
                   >
-                    <span style={{ fontWeight: 600, color: "#1769aa" }}>
+                    <span className="profile-draft-card-title">
                       {draft.name || `Draft ${idx + 1}`}
                     </span>
-                    <div style={{ display: "flex", gap: "0.7em" }}>
+                    <div className="profile-draft-card-btns">
                       <button
-                        style={{
-                          padding: "0.5em 1.2em",
-                          background:
-                            "linear-gradient(90deg, #2196f3 0%, #1769aa 100%)",
-                          color: "#fff",
-                          fontWeight: 600,
-                          border: "none",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          fontSize: "1em",
-                          boxShadow: "0 2px 8px rgba(33,150,243,0.10)",
-                        }}
+                        className="profile-btn profile-draft-load-btn"
                         onClick={() =>
                           navigate("/mainWall", { state: { draft } })
                         }
@@ -1264,192 +1313,159 @@ export default function Profile() {
                         Load
                       </button>
                       <button
-                        style={{
-                          padding: "0.5em 1.2em",
-                          background:
-                            "linear-gradient(90deg, #ff4d4d 0%, #ff7b7b 100%)",
-                          color: "#fff",
-                          fontWeight: 600,
-                          border: "none",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          fontSize: "1em",
-                          boxShadow: "0 2px 8px rgba(255,77,77,0.10)",
-                        }}
+                        className="profile-btn profile-draft-delete-btn"
                         onClick={() => handleDeleteDraft(draft.wall_id)}
                       >
                         Delete
                       </button>
                       <button
-                        style={{
-                          padding: "0.5em 1.2em",
-                          background:
-                            "linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)",
-                          color: "#1769aa",
-                          fontWeight: 600,
-                          border: "none",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          fontSize: "1em",
-                          boxShadow: "0 2px 8px rgba(33,243,150,0.10)",
-                          position: 'relative',
+                        className="profile-btn profile-draft-share-btn"
+                        onClick={() => {
+                          if (!anySharingEnabled) {
+                            const upgrade = confirm('Sharing is only available for premium users. Would you like to upgrade your plan?');
+                            if (upgrade) {
+                              window.location.href = '/subscriptions';
+                            }
+                            return;
+                          }
+                          setShareMenuOpen(draft.wall_id);
                         }}
-                        onClick={() => setShareMenuOpen(draft.wall_id)}
+                        style={{
+                          opacity: anySharingEnabled ? 1 : 0.6,
+                          cursor: anySharingEnabled ? 'pointer' : 'not-allowed',
+                          background: anySharingEnabled ? undefined : '#e0e7ef',
+                          color: anySharingEnabled ? undefined : '#b5b5d6',
+                        }}
+                        disabled={!anySharingEnabled}
+                        title={!anySharingEnabled ? 'Upgrade required for sharing' : 'Share this draft'}
                       >
                         Share
-                        {shareMenuOpen === draft.wall_id && (
+                        {!anySharingEnabled && (
+                          <span style={{ fontSize: '0.8em', marginLeft: '0.3em', opacity: 0.8 }}>
+                            🔒
+                          </span>
+                        )}
+                        {shareMenuOpen === draft.wall_id && anySharingEnabled && (
                           <div
                             ref={shareMenuRef}
-                            style={{
-                              position: 'absolute',
-                              top: '110%',
-                              right: 0,
-                              background: '#fff',
-                              border: '1.5px solid #e5e7eb',
-                              borderRadius: 8,
-                              boxShadow: '0 2px 8px rgba(33,150,243,0.10)',
-                              zIndex: 100,
-                              minWidth: 120,
-                              padding: '0.3em 0',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '0.1em',
-                            }}
+                            className="profile-share-menu"
                           >
-                            {authorizedSubMenuOpen === draft.wall_id ? (
-                              <>
-                                <button
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    textAlign: 'left',
-                                    padding: '0.5em 1.2em',
-                                    color: '#1769aa',
-                                    fontWeight: 600,
-                                    fontSize: '1em',
-                                    cursor: 'pointer',
-                                    borderRadius: 6,
-                                    transition: 'background 0.18s, color 0.18s',
-                                  }}
-                                  onClick={() => {
-                                    setShowEmailModal(true);
-                                    setPendingWallId(draft.wall_id);
-                                    setShareMenuOpen(null);
-                                    setAuthorizedSubMenuOpen(null);
-                                    setUnauthorizedSubMenuOpen(null);
-                                  }}
-                                >
-                                  View Only
-                                </button>
-                                <button
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    textAlign: 'left',
-                                    padding: '0.5em 1.2em',
-                                    color: '#1769aa',
-                                    fontWeight: 600,
-                                    fontSize: '1em',
-                                    cursor: 'pointer',
-                                    borderRadius: 6,
-                                    transition: 'background 0.18s, color 0.18s',
-                                  }}
-                                  onClick={() => {
-                                    setShowEditEmailModal(true);
-                                    setPendingEditWallId(draft.wall_id);
-                                    setShareMenuOpen(null);
-                                    setAuthorizedSubMenuOpen(null);
-                                    setUnauthorizedSubMenuOpen(null);
-                                  }}
-                                >
-                                  Edit Draft
-                                </button>
-                              </>
-                            ) : unauthorizedSubMenuOpen === draft.wall_id ? (
-                              <>
-                                <button
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    textAlign: 'left',
-                                    padding: '0.5em 1.2em',
-                                    color: '#1769aa',
-                                    fontWeight: 600,
-                                    fontSize: '1em',
-                                    cursor: 'pointer',
-                                    borderRadius: 6,
-                                    transition: 'background 0.18s, color 0.18s',
-                                  }}
-                                  onClick={() => {
-                                    setShareMenuOpen(null);
-                                    setAuthorizedSubMenuOpen(null);
-                                    setUnauthorizedSubMenuOpen(null);
-                                    handlePublicShare(draft.wall_id);
-                                  }}
-                                >
-                                  View Only
-                                </button>
-                                <button
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    textAlign: 'left',
-                                    padding: '0.5em 1.2em',
-                                    color: '#1769aa',
-                                    fontWeight: 600,
-                                    fontSize: '1em',
-                                    cursor: 'pointer',
-                                    borderRadius: 6,
-                                    transition: 'background 0.18s, color 0.18s',
-                                  }}
-                                  onClick={() => {
-                                    setShareMenuOpen(null);
-                                    setAuthorizedSubMenuOpen(null);
-                                    setUnauthorizedSubMenuOpen(null);
-                                    handleEditShare(draft.wall_id);
-                                  }}
-                                >
-                                  Edit Draft
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    textAlign: 'left',
-                                    padding: '0.5em 1.2em',
-                                    color: '#1769aa',
-                                    fontWeight: 600,
-                                    fontSize: '1em',
-                                    cursor: 'pointer',
-                                    borderRadius: 6,
-                                    transition: 'background 0.18s, color 0.18s',
-                                  }}
-                                  onClick={() => { setAuthorizedSubMenuOpen(draft.wall_id); setUnauthorizedSubMenuOpen(null); }}
-                                >
-                                  Authorized
-                                </button>
-                                <button
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    textAlign: 'left',
-                                    padding: '0.5em 1.2em',
-                                    color: '#1769aa',
-                                    fontWeight: 600,
-                                    fontSize: '1em',
-                                    cursor: 'pointer',
-                                    borderRadius: 6,
-                                    transition: 'background 0.18s, color 0.18s',
-                                  }}
-                                  onClick={() => { setUnauthorizedSubMenuOpen(draft.wall_id); setAuthorizedSubMenuOpen(null); }}
-                                >
-                                  Unauthorized
-                                </button>
-                              </>
-                            )}
+                            <button
+                              className="profile-share-menu-btn profile-share-menu-parent"
+                              onClick={() => {
+                                setAuthorizedSubMenuOpen(authorizedSubMenuOpen === draft.wall_id ? null : draft.wall_id);
+                                setUnauthorizedSubMenuOpen(null);
+                              }}
+                            >
+                              Authorized
+                              {authorizedSubMenuOpen === draft.wall_id && (
+                                <div className="profile-share-submenu profile-share-submenu-dropdown">
+                                  <button
+                                    className="profile-share-menu-btn"
+                                    onClick={() => {
+                                      if (!shareAuthViewEnabled) {
+                                        const upgrade = confirm('Authorized View sharing is only available for premium users. Would you like to upgrade your plan?');
+                                        if (upgrade) {
+                                          window.location.href = '/subscriptions';
+                                        }
+                                        return;
+                                      }
+                                      setShowEmailModal(true);
+                                      setPendingWallId(draft.wall_id);
+                                      setShareMenuOpen(null);
+                                      setAuthorizedSubMenuOpen(null);
+                                    }}
+                                    style={{
+                                      opacity: shareAuthViewEnabled ? 1 : 0.6,
+                                      cursor: shareAuthViewEnabled ? 'pointer' : 'not-allowed',
+                                    }}
+                                    disabled={!shareAuthViewEnabled}
+                                  >
+                                    View {!shareAuthViewEnabled && '🔒'}
+                                  </button>
+                                  <button
+                                    className="profile-share-menu-btn"
+                                    onClick={() => {
+                                      if (!shareAuthEditEnabled) {
+                                        const upgrade = confirm('Authorized Edit sharing is only available for premium users. Would you like to upgrade your plan?');
+                                        if (upgrade) {
+                                          window.location.href = '/subscriptions';
+                                        }
+                                        return;
+                                      }
+                                      setShowEditEmailModal(true);
+                                      setPendingEditWallId(draft.wall_id);
+                                      setShareMenuOpen(null);
+                                      setAuthorizedSubMenuOpen(null);
+                                    }}
+                                    style={{
+                                      opacity: shareAuthEditEnabled ? 1 : 0.6,
+                                      cursor: shareAuthEditEnabled ? 'pointer' : 'not-allowed',
+                                    }}
+                                    disabled={!shareAuthEditEnabled}
+                                  >
+                                    Edit {!shareAuthEditEnabled && '🔒'}
+                                  </button>
+                                </div>
+                              )}
+                            </button>
+                            <button
+                              className="profile-share-menu-btn profile-share-menu-parent"
+                              onClick={() => {
+                                setUnauthorizedSubMenuOpen(unauthorizedSubMenuOpen === draft.wall_id ? null : draft.wall_id);
+                                setAuthorizedSubMenuOpen(null);
+                              }}
+                            >
+                              Unauthorized
+                              {unauthorizedSubMenuOpen === draft.wall_id && (
+                                <div className="profile-share-submenu profile-share-submenu-dropdown">
+                                  <button
+                                    className="profile-share-menu-btn"
+                                    onClick={() => {
+                                      if (!shareUnauthViewEnabled) {
+                                        const upgrade = confirm('Unauthorized View sharing is only available for premium users. Would you like to upgrade your plan?');
+                                        if (upgrade) {
+                                          window.location.href = '/subscriptions';
+                                        }
+                                        return;
+                                      }
+                                      handlePublicShare(draft.wall_id);
+                                      setShareMenuOpen(null);
+                                      setUnauthorizedSubMenuOpen(null);
+                                    }}
+                                    style={{
+                                      opacity: shareUnauthViewEnabled ? 1 : 0.6,
+                                      cursor: shareUnauthViewEnabled ? 'pointer' : 'not-allowed',
+                                    }}
+                                    disabled={!shareUnauthViewEnabled}
+                                  >
+                                    View {!shareUnauthViewEnabled && '🔒'}
+                                  </button>
+                                  <button
+                                    className="profile-share-menu-btn"
+                                    onClick={() => {
+                                      if (!shareUnauthEditEnabled) {
+                                        const upgrade = confirm('Unauthorized Edit sharing is only available for premium users. Would you like to upgrade your plan?');
+                                        if (upgrade) {
+                                          window.location.href = '/subscriptions';
+                                        }
+                                        return;
+                                      }
+                                      handleEditShare(draft.wall_id);
+                                      setShareMenuOpen(null);
+                                      setUnauthorizedSubMenuOpen(null);
+                                    }}
+                                    style={{
+                                      opacity: shareUnauthEditEnabled ? 1 : 0.6,
+                                      cursor: shareUnauthEditEnabled ? 'pointer' : 'not-allowed',
+                                    }}
+                                    disabled={!shareUnauthEditEnabled}
+                                  >
+                                    Edit {!shareUnauthEditEnabled && '🔒'}
+                                  </button>
+                                </div>
+                              )}
+                            </button>
                           </div>
                         )}
                       </button>

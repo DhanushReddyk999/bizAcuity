@@ -1,5 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { buildApiUrl } from "./config/api";
+import { getClipPath } from "./config/constants";
 
 export default function AuthViewDraft() {
   const { viewId } = useParams();
@@ -17,7 +19,7 @@ export default function AuthViewDraft() {
     async function fetchDraft() {
       try {
         const token = JSON.parse(user).token;
-        const res = await fetch(`http://localhost:8080/authViewDraft/${viewId}`, {
+        const res = await fetch(buildApiUrl(`/authViewDraft/${viewId}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.status === 401 || res.status === 403) {
@@ -88,22 +90,47 @@ export default function AuthViewDraft() {
             src = `/${src}`;
           }
           return (
-            <img
+            <div
               key={idx}
-              src={src}
-              alt=""
               style={{
                 position: "absolute",
                 left: img.x,
                 top: img.y,
                 width: img.width,
                 height: img.height,
-                objectFit: "contain",
                 pointerEvents: "none",
-                border: img.selected ? "2px solid #2196f3" : "none",
-                borderRadius: img.shape === "rectangle" ? 8 : "50%",
+                zIndex: 2,
               }}
-            />
+            >
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  clipPath: getClipPath(img.shape),
+                  WebkitClipPath: getClipPath(img.shape),
+                  overflow: "hidden",
+                  background: "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <img
+                  src={src}
+                  alt=""
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    background: "transparent",
+                    border: "none",
+                    borderRadius: 0,
+                    margin: 0,
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
+            </div>
           );
         })}
       </div>

@@ -27,64 +27,39 @@ export default function Wall({ background: initialBackground, wallRef, width, he
     };
 
     return (
-        <div className="wall" >
+        <div className="wall">
             <div
-                className="displayWall"
+                className="wall-display"
                 style={{
-                width,
-                height,
+                    width,
+                    height,
                     backgroundImage: background && (background.startsWith("url(") || background.includes("gradient")) ? background : "none",
                     backgroundColor: background && !background.includes("url") && !background.includes("gradient") ? background : "white",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                border: "2px solid black",
-                color: "white",
-                fontWeight: "bold",
-                position: "relative",
-                    overflow: "hidden",
-                    marginTop: "50px"
-            }}
-            ref={wallRef}
+                }}
+                ref={wallRef}
             >
               {images && images.map((img, idx) => (
                 <div
                   key={idx}
+                  className="wall-image-container"
                   style={{
-                    position: "absolute",
                     left: img.x,
                     top: img.y,
                     width: img.width,
                     height: img.height,
-                    pointerEvents: "none",
-                    zIndex: 2,
                   }}
                 >
                   <div
+                    className="wall-image-clip"
                     style={{
-                      width: "100%",
-                      height: "100%",
                       clipPath: getClipPath(img.shape),
                       WebkitClipPath: getClipPath(img.shape),
-                      overflow: "hidden",
-                      background: "transparent",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
                     }}
                   >
                     <img
                       src={img.src}
                       alt={`wall-img-${idx}`}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        background: "transparent",
-                        border: "none",
-                        borderRadius: 0,
-                        margin: 0,
-                        pointerEvents: "none",
-                      }}
+                      className="wall-image"
                     />
                   </div>
                 </div>

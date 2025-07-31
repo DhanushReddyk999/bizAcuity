@@ -1,5 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { buildApiUrl } from "./config/api";
+import { getClipPath } from "./config/constants";
 
 export default function SharedDraft() {
   const { shareId } = useParams();
@@ -11,7 +13,7 @@ export default function SharedDraft() {
   useEffect(() => {
     async function fetchDraft() {
       try {
-        const res = await fetch(`http://localhost:8080/publicDraft/${shareId}`);
+        const res = await fetch(buildApiUrl(`/publicDraft/${shareId}`));
         if (!res.ok) {
           setError("Draft not found or not public.");
           setLoading(false);
@@ -75,22 +77,47 @@ export default function SharedDraft() {
             src = `/${src}`;
           }
           return (
-            <img
+            <div
               key={idx}
-              src={src}
-              alt=""
               style={{
                 position: "absolute",
                 left: img.x,
                 top: img.y,
                 width: img.width,
                 height: img.height,
-                objectFit: "contain",
                 pointerEvents: "none", // view only
-                border: img.selected ? "2px solid #2196f3" : "none",
-                borderRadius: img.shape === "rectangle" ? 8 : "50%",
+                zIndex: 2,
               }}
-            />
+            >
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  clipPath: getClipPath(img.shape),
+                  WebkitClipPath: getClipPath(img.shape),
+                  overflow: "hidden",
+                  background: "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <img
+                  src={src}
+                  alt=""
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    background: "transparent",
+                    border: "none",
+                    borderRadius: 0,
+                    margin: 0,
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
+            </div>
           );
         })}
       </div>

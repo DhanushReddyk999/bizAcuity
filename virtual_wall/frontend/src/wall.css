@@ -1,0 +1,758 @@
+/* Wall Page Styles - Matching Home Page Theme */
+
+/* Override body styles that cause white space */
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  place-items: unset !important;
+  min-height: 100vh;
+}
+
+.wall-container {
+  min-height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 25%, #dee2e6 50%, #e9ecef 75%, #f8f9fa 100%);
+  position: relative;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+.wall-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse 80% 20% at 20% 20%, rgba(200,200,200,0.3) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 15% at 80% 30%, rgba(200,200,200,0.25) 0%, transparent 45%),
+    radial-gradient(ellipse 90% 25% at 40% 50%, rgba(150,200,255,0.4) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 20% at 70% 60%, rgba(100,150,255,0.5) 0%, transparent 50%),
+    radial-gradient(ellipse 85% 30% at 10% 70%, rgba(50,100,255,0.6) 0%, transparent 60%),
+    radial-gradient(ellipse 75% 25% at 90% 80%, rgba(0,100,255,0.7) 0%, transparent 65%),
+    radial-gradient(ellipse 95% 35% at 30% 85%, rgba(0,150,255,0.8) 0%, transparent 70%),
+    radial-gradient(ellipse 65% 20% at 60% 90%, rgba(0,200,255,0.9) 0%, transparent 75%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 20px,
+      rgba(200,200,200,0.1) 20px,
+      rgba(200,200,200,0.1) 22px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 40px,
+      rgba(150,200,255,0.15) 40px,
+      rgba(150,200,255,0.15) 42px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 60px,
+      rgba(100,150,255,0.2) 60px,
+      rgba(100,150,255,0.2) 62px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 80px,
+      rgba(50,100,255,0.25) 80px,
+      rgba(50,100,255,0.25) 82px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 100px,
+      rgba(0,100,255,0.3) 100px,
+      rgba(0,100,255,0.3) 102px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 120px,
+      rgba(0,150,255,0.35) 120px,
+      rgba(0,150,255,0.35) 122px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 140px,
+      rgba(0,200,255,0.4) 140px,
+      rgba(0,200,255,0.4) 142px
+    );
+  z-index: -1;
+  opacity: 0.9;
+}
+
+/* Header Section */
+.wall-header {
+  background: linear-gradient(135deg, #2d6bb8 0%, #1a4d80 50%, #0d2b4a 100%);
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.2rem 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 10;
+  margin: 0;
+  top: 0;
+}
+
+.wall-header-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0;
+  position: relative;
+}
+
+.wall-header-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+}
+
+.wall-header-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffffff;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, #ffffff 0%, #e6f3ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.2rem;
+}
+
+.wall-header-subtitle {
+  display: block;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #b5b5d6;
+  margin-top: 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+.wall-profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255,255,255,0.9);
+  border: 3px solid rgba(33,150,243,0.3);
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(33, 150, 243, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: absolute;
+  left: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+}
+
+.wall-profile-avatar:hover {
+  box-shadow: 0 8px 30px rgba(33, 150, 243, 0.35);
+  border-color: #667eea;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.wall-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.wall-admin-btn {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  color: #fff;
+  padding: 20px 40px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1.4rem;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.25);
+  letter-spacing: 0.01em;
+  transition: all 0.3s ease;
+  position: absolute;
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+}
+
+.wall-admin-btn:hover {
+  background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+  transform: translateY(-50%) translateY(-2px);
+  box-shadow: 0 8px 30px rgba(244, 67, 54, 0.4);
+}
+
+.wall-main-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: 80vh;
+  position: relative;
+  padding: 2rem;
+  gap: 2.5rem;
+}
+
+.wall-background-panel {
+  background: rgba(255,255,255,0.95);
+  border-radius: 22px;
+  box-shadow: 0 8px 32px rgba(33,150,243,0.13);
+  padding: 2rem 1.2rem;
+  border: 2px solid rgba(33,150,243,0.2);
+  min-width: 240px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+  margin-top: -50px;
+  backdrop-filter: blur(10px);
+}
+
+.wall-background-title {
+  margin-bottom: 1.2rem;
+  font-weight: 800;
+  color: #1769aa;
+  letter-spacing: 0.01em;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.wall-background-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  width: 100%;
+}
+
+.wall-background-option {
+  border: 2px solid rgba(33,150,243,0.3);
+  padding: 4px;
+  cursor: pointer;
+  width: 100%;
+  height: 90px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+  transition: all 0.3s ease;
+}
+
+.wall-background-option:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(33, 150, 243, 0.25);
+  border-color: #667eea;
+}
+
+.wall-background-option.selected {
+  border: 3px solid #667eea;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  transform: scale(1.02);
+}
+
+.wall-background-label {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 4px;
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  font-size: 13px;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.wall-canvas-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin-top: -200px;
+}
+
+.wall-display {
+  border: 2px solid #495057;
+  color: white;
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  margin: 0 auto;
+}
+
+.wall-image-container {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.wall-image-clip {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wall-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.wall-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1em;
+  gap: 1rem;
+}
+
+.wall-download-btn {
+  margin-top: 10px;
+  padding: 14px 28px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.wall-download-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.wall-download-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 15px 35px rgba(33, 150, 243, 0.6);
+  color: white;
+}
+
+.wall-download-btn:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.wall-download-btn:active:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(33, 150, 243, 0.5);
+}
+
+.wall-download-btn:disabled {
+  background-color: #b5b5d6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.wall-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.wall-draft-info {
+  font-size: 0.9em;
+  color: #1769aa;
+  font-weight: 600;
+  padding: 0.8em 1.2em;
+  background: rgba(255,255,255,0.9);
+  border-radius: 10px;
+  border: 2px solid rgba(33,150,243,0.3);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+}
+
+.wall-draft-info.limit-reached {
+  color: #b71c1c;
+  background: #ffebee;
+  border-color: #ffcdd2;
+}
+
+.wall-save-btn {
+  padding: 14px 28px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.wall-save-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.wall-save-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 15px 35px rgba(33, 150, 243, 0.6);
+  color: white;
+}
+
+.wall-save-btn:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.wall-save-btn:active:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(33, 150, 243, 0.5);
+}
+
+.wall-save-btn:disabled {
+  background-color: #b5b5d6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.wall-reset-btn {
+  padding: 14px 28px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.wall-reset-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.wall-reset-btn:hover {
+  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 15px 35px rgba(33, 150, 243, 0.6);
+  color: white;
+}
+
+.wall-reset-btn:hover::before {
+  left: 100%;
+}
+
+.wall-reset-btn:active {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(33, 150, 243, 0.5);
+}
+
+.wall-settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2em;
+  padding: 1.5rem 2.5rem 1.5rem 2.5rem;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(33,150,243,0.13);
+  background: rgba(255,255,255,0.95);
+  border: 2px solid rgba(33,150,243,0.2);
+  max-width: 1600px;
+  width: 100%;
+  backdrop-filter: blur(10px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.wall-settings-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 2.5em;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.wall-settings-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  flex: 1;
+  min-width: 250px;
+}
+
+.wall-settings-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  flex: 1;
+  min-width: 250px;
+}
+
+.wall-settings-image {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  flex: 1;
+  min-width: 250px;
+}
+
+.wall-upgrade-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.wall-upgrade-content {
+  background: rgba(255,255,255,0.95);
+  border-radius: 20px;
+  padding: 2.5rem;
+  max-width: 400px;
+  min-width: 320px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(33,150,243,0.2);
+}
+
+.wall-upgrade-title {
+  font-size: 1.3em;
+  margin-bottom: 20px;
+  font-weight: 700;
+  color: #1769aa;
+  text-align: center;
+}
+
+.wall-upgrade-message {
+  color: #d32f2f;
+  margin-bottom: 20px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.wall-upgrade-btn {
+  width: 100%;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.wall-upgrade-btn:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+.wall-cancel-btn {
+  width: 100%;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+.wall-cancel-btn:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .wall-main-content {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .wall-background-panel {
+    margin-top: 0;
+    max-width: 100%;
+  }
+  
+  .wall-canvas-container {
+    margin-top: 0;
+  }
+  
+  .wall-settings-panel {
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 100%;
+  }
+  
+  .wall-settings-layout {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .wall-settings-right {
+    margin-top: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .wall-header {
+    padding: 1rem 2rem;
+  }
+  
+  .wall-header-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .wall-header-left {
+    align-items: center;
+    text-align: center;
+  }
+  
+  .wall-header-title {
+    font-size: 1.5rem;
+  }
+  
+  .wall-header-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .wall-header-right {
+    gap: 1rem;
+  }
+  
+  .wall-profile-avatar {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .wall-admin-btn {
+    padding: 14px 28px;
+    font-size: 1.1rem;
+  }
+  
+  .wall-main-content {
+    padding: 1rem;
+  }
+  
+  .wall-background-panel {
+    padding: 1.5rem 1rem;
+  }
+  
+  .wall-settings-panel {
+    padding: 1rem;
+    margin: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .wall-header {
+    padding: 0.8rem 1.5rem;
+  }
+  
+  .wall-header-title {
+    font-size: 1.3rem;
+  }
+  
+  .wall-profile-avatar {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .wall-admin-btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+  
+  .wall-actions {
+    flex-direction: column;
+    gap: 0.8em;
+  }
+  
+  .wall-settings-panel {
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+} 

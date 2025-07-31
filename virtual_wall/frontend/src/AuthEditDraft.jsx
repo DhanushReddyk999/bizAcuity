@@ -5,6 +5,9 @@ import Image from "./image.jsx";
 import WallDimensions from "./wall_dimensions.jsx";
 import WallBackgrounds from "./wall_backgrounds.jsx";
 import StickerPanel from "./stickers.jsx";
+import { usePlan } from "./PlanContext";
+import { buildApiUrl } from "./config/api";
+import { APP_CONSTANTS, getCategoryForSticker } from "./config/constants";
 
 export default function AuthEditDraft() {
   const { editId } = useParams();
@@ -16,13 +19,25 @@ export default function AuthEditDraft() {
   const [wallId, setWallId] = useState(null);
 
   // Wall editor state
-  const [background, setBackground] = useState("url(/CottageWall.jpg)");
+  const [background, setBackground] = useState(APP_CONSTANTS.DEFAULT_BACKGROUND);
   const [images, setImages] = useState([]);
   const wallRef = useRef(null);
-  const [width, setWidth] = useState("1000px");
-  const [height, setHeight] = useState("500px");
-  const [activeType, setActiveType] = useState("fill");
+  const [width, setWidth] = useState(APP_CONSTANTS.DEFAULT_WIDTH);
+  const [height, setHeight] = useState(APP_CONSTANTS.DEFAULT_HEIGHT);
+  const [activeType, setActiveType] = useState(APP_CONSTANTS.DEFAULT_ACTIVE_TYPE);
   const [userLoaded, setUserLoaded] = useState(0);
+
+  // Plan context for sticker limits
+  const { planFeatures } = usePlan();
+
+  // State to track selected sticker category in StickerPanel
+  const [selectedStickerCategory, setSelectedStickerCategory] = useState(APP_CONSTANTS.DEFAULT_STICKER_CATEGORY);
+
+  // Count stickers on the wall for the selected category
+  const currentCategoryStickerCount = images.filter(img => getCategoryForSticker(img.src) === selectedStickerCategory).length;
+
+  // Use the plan's stickers_limit as the per-category limit
+  const perCategoryStickerLimit = planFeatures.stickers_limit ?? 0;
 
   // Check login and trigger userLoaded after login
   useEffect(() => {
@@ -41,7 +56,7 @@ export default function AuthEditDraft() {
     async function fetchDraft() {
       try {
         const token = JSON.parse(user).token;
-        const res = await fetch(`http://localhost:8080/authEditDraft/${editId}`, {
+        const res = await fetch(buildApiUrl(`/authEditDraft/${editId}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.status === 401 || res.status === 403) {
@@ -58,11 +73,11 @@ export default function AuthEditDraft() {
         setWallId(data.wall_id || null);
         setDraftName(data.wall_name || "Untitled");
         const decoded = JSON.parse(atob(data.wall_data));
-        setBackground(decoded.background || "url(/CottageWall.jpg)");
+        setBackground(decoded.background || APP_CONSTANTS.DEFAULT_BACKGROUND);
         setImages(decoded.images || []);
-        setWidth(decoded.width || "1000px");
-        setHeight(decoded.height || "500px");
-        setActiveType(decoded.activeType || "fill");
+        setWidth(decoded.width || APP_CONSTANTS.DEFAULT_WIDTH);
+        setHeight(decoded.height || APP_CONSTANTS.DEFAULT_HEIGHT);
+        setActiveType(decoded.activeType || APP_CONSTANTS.DEFAULT_ACTIVE_TYPE);
       } catch (err) {
         setError("Error loading draft.");
       } finally {
@@ -96,7 +111,7 @@ export default function AuthEditDraft() {
         name: draftName,
       };
       const encoded = btoa(JSON.stringify(wall_data));
-      const res = await fetch(`http://localhost:8080/authEditDraft/${editId}`, {
+      const res = await fetch(buildApiUrl(`/authEditDraft/${editId}`), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -160,7 +175,13 @@ export default function AuthEditDraft() {
         Authorized Edit Draft: {draftName}
         <span>Edit this altar and save changes (invite-only)</span>
       </div>
-      <StickerPanel onSubmitStickers={addStickersToWall} />
+      <StickerPanel 
+        onSubmitStickers={addStickersToWall} 
+        currentCategory={selectedStickerCategory}
+        setCurrentCategory={setSelectedStickerCategory}
+        currentCategoryStickerCount={currentCategoryStickerCount}
+        categoryStickerLimit={perCategoryStickerLimit}
+      />
       <div
         style={{
           display: "flex",

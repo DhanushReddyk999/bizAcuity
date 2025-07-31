@@ -1,9 +1,12 @@
 import { createPortal } from "react-dom";
 import { Rnd } from "react-rnd";
 import {useRef} from "react";
+import { usePlan } from "./PlanContext";
 
 export default function Image({ images, setImages, wallRef }) {
   const fileInputRef=useRef(null);
+  const { planFeatures } = usePlan();
+  const uploadImageEnabled = planFeatures.upload_image_enabled;
   function handleImageUpload(e) {
     const files = Array.from(e.target.files);
     const newImages = [];
@@ -64,18 +67,11 @@ export default function Image({ images, setImages, wallRef }) {
 
   return (
     <div className="imageSettings" style={{
-      background: '#f9fafb',
-      borderRadius: '16px',
-      boxShadow: '0 2px 12px rgba(33,150,243,0.10)',
-      padding: '1.1rem 2.5rem 0.35rem 2.5rem',
-      margin: '1.5rem auto',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'flex-start',
-      border: '1.5px solid #e5e7eb',
-      maxWidth: 500,
-      minWidth: 350,
-      width: '100%'
+      width: '100%',
+      padding: '0.5rem'
     }}>
       <input type="file" 
       accept="image/*"
@@ -85,22 +81,54 @@ export default function Image({ images, setImages, wallRef }) {
       ref={fileInputRef}/>
       <div style={{ width: '100%', marginBottom: '1.2em' }}>
         <span style={{ fontWeight: 800, color: '#1769aa', fontSize: '1.4em', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>Image Settings</span>
+        {!uploadImageEnabled && (
+          <div style={{ 
+            color: '#b71c1c', 
+            fontWeight: 600, 
+            fontSize: '0.9em', 
+            marginTop: '0.5em',
+            padding: '0.5em',
+            background: '#ffebee',
+            borderRadius: '6px',
+            border: '1px solid #ffcdd2'
+          }}>
+            ⚠️ Image upload is disabled for your current plan. Upgrade to enable this feature.
+          </div>
+        )}
       </div>
       <div style={{ display: 'flex', flexDirection: 'row', gap: '1em', marginBottom: '1.5rem', alignItems: 'center', width: '100%' }}>
-        <button onClick={()=>{fileInputRef.current.click()}}
+        <button onClick={()=>{
+          if (!uploadImageEnabled) {
+            const upgrade = confirm('Image upload is only available for premium users. Would you like to upgrade your plan?');
+            if (upgrade) {
+              window.location.href = '/subscriptions';
+            }
+            return;
+          }
+          fileInputRef.current.click();
+        }}
           style={{
             padding: "0.7rem 1.3rem",
             fontSize: "1em",
-            background: "linear-gradient(90deg, #2196f3 0%, #1769aa 100%)",
-            color: "white",
+            background: uploadImageEnabled ? "linear-gradient(90deg, #2196f3 0%, #1769aa 100%)" : "#e0e7ef",
+            color: uploadImageEnabled ? "white" : "#b5b5d6",
             border: "none",
             borderRadius: "8px",
-            cursor: "pointer",
+            cursor: uploadImageEnabled ? "pointer" : "not-allowed",
             fontWeight: 600,
-            boxShadow: '0 2px 8px rgba(33,150,243,0.10)',
+            boxShadow: uploadImageEnabled ? '0 2px 8px rgba(33,150,243,0.10)' : 'none',
             transition: 'background 0.2s, box-shadow 0.2s',
+            opacity: uploadImageEnabled ? 1 : 0.6,
           }}
-        >Upload Image</button>
+          disabled={!uploadImageEnabled}
+        >
+          Upload Image
+          {!uploadImageEnabled && (
+            <span style={{ fontSize: '0.8em', marginLeft: '0.5em' }}>
+              (Upgrade Required)
+            </span>
+          )}
+        </button>
         <button
           onClick={() => setImages(images.filter(img => !img.selected))}
           style={{
