@@ -433,16 +433,4 @@ router.put("/admin/user/:id/role", authenticateToken, async (req, res) => {
   }
 });
 
-// Get all users (for debugging)
-router.get("/debug/users", (req, res) => {
-  db.query(
-    `SELECT users.id, users.username, users.email, users.plan_id, users.subscription_expires, plans.name as plan_name
-     FROM users LEFT JOIN plans ON users.plan_id = plans.id`,
-    (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(results);
-    }
-  );
-});
-
 module.exports = router; 
