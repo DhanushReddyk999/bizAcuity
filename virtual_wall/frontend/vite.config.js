@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': process.env.VITE_BACKEND_URL || 'http://localhost:8080',
+      '/api': process.env.VITE_BACKEND_URL || 'https://bizacuity.onrender.com',
     },
   },
 })
