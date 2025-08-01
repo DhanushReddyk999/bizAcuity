@@ -39,12 +39,12 @@ const API_CONFIG = {
     EDIT_SHARED_DRAFT: '/editSharedDraft',
     
     // Admin
-    ADMIN_USERS: '/admin/users',
-    ADMIN_USER: '/admin/user',
-    ADMIN_DRAFTS: '/admin/drafts',
+    ADMIN_USERS: '/api/admin/users',
+    ADMIN_USER: '/api/admin/user',
+    ADMIN_DRAFTS: '/api/admin/drafts',
     ADMIN_PLANS: '/api/admin/plans',
-    ADMIN_RESEND_EMAIL_CHANGE_OTP: '/admin/resend-email-change-otp',
-    ADMIN_VERIFY_EMAIL_CHANGE: '/admin/verify-email-change',
+    ADMIN_RESEND_EMAIL_CHANGE_OTP: '/api/admin/resend-email-change-otp',
+    ADMIN_VERIFY_EMAIL_CHANGE: '/api/admin/verify-email-change',
     
     // Email Verification
     REQUEST_EMAIL_CHANGE: '/mail-verification/request-email-change',
