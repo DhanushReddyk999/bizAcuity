@@ -56,4 +56,4 @@ app.use('/api/plans', (req, res) => {
   });
 });
 app.use('/mail-verification', mailVerificationRoutes);
-app.use(adminPlanRoutes);
+app.use('/api/admin', adminPlanRoutes);

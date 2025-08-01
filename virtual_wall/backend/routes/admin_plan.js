@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// GET /api/admin/plans - fetch all plans (no join, just return all columns)
-router.get('/api/admin/plans', (req, res) => {
+// GET /plans - fetch all plans (no join, just return all columns)
+router.get('/plans', (req, res) => {
   db.query('SELECT * FROM plans', (err, plans) => {
     if (err) return res.status(500).json({ error: 'Failed to fetch plans' });
     res.json(plans);
@@ -11,7 +11,7 @@ router.get('/api/admin/plans', (req, res) => {
 });
 
 // Create a new plan
-router.post('/api/admin/plans', (req, res) => {
+router.post('/plans', (req, res) => {
   const { name, price, duration } = req.body;
   db.query('INSERT INTO plans (name, price, duration) VALUES (?, ?, ?)', [name, price, duration], (err, result) => {
     if (err) return res.status(500).json({ error: 'Failed to create plan' });
@@ -20,7 +20,7 @@ router.post('/api/admin/plans', (req, res) => {
 });
 
 // Update a plan
-router.put('/api/admin/plans/:id', (req, res) => {
+router.put('/plans/:id', (req, res) => {
   const { name, price, duration } = req.body;
   db.query('UPDATE plans SET name=?, price=?, duration=? WHERE id=?', [name, price, duration, req.params.id], (err) => {
     if (err) return res.status(500).json({ error: 'Failed to update plan' });
@@ -29,7 +29,7 @@ router.put('/api/admin/plans/:id', (req, res) => {
 });
 
 // Update max_drafts for a plan
-router.put('/api/admin/plans/:id/max-drafts', (req, res) => {
+router.put('/plans/:id/max-drafts', (req, res) => {
   const { maxDrafts } = req.body;
   db.query('UPDATE plans SET max_drafts=? WHERE id=?', [maxDrafts, req.params.id], (err) => {
     if (err) return res.status(500).json({ error: 'Failed to update max drafts' });
@@ -38,7 +38,7 @@ router.put('/api/admin/plans/:id/max-drafts', (req, res) => {
 });
 
 // Update sticker limit for a plan (single column)
-router.put('/api/admin/plans/:id/sticker-limit', (req, res) => {
+router.put('/plans/:id/sticker-limit', (req, res) => {
   const { stickers_limit } = req.body;
   db.query('UPDATE plans SET stickers_limit=? WHERE id=?', [stickers_limit, req.params.id], (err) => {
     if (err) return res.status(500).json({ error: 'Failed to update sticker limit' });
@@ -47,7 +47,7 @@ router.put('/api/admin/plans/:id/sticker-limit', (req, res) => {
 });
 
 // Update share toggles for a plan
-router.put('/api/admin/plans/:id/share-toggles', (req, res) => {
+router.put('/plans/:id/share-toggles', (req, res) => {
   const {
     share_authorized_view_enabled,
     share_authorized_edit_enabled,
@@ -76,7 +76,7 @@ router.put('/api/admin/plans/:id/share-toggles', (req, res) => {
 });
 
 // Update feature toggles for a plan
-router.put('/api/admin/plans/:id/feature-toggles', (req, res) => {
+router.put('/plans/:id/feature-toggles', (req, res) => {
   const {
     download_wall_enabled,
     custom_bg_enabled,
@@ -102,15 +102,15 @@ router.put('/api/admin/plans/:id/feature-toggles', (req, res) => {
 });
 
 // Delete a plan
-router.delete('/api/admin/plans/:id', (req, res) => {
+router.delete('/plans/:id', (req, res) => {
   db.query('DELETE FROM plans WHERE id=?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: 'Failed to delete plan' });
     res.json({ success: true });
   });
 });
 
-// GET /api/plans - fetch all plans for public display
-router.get('/api/plans', (req, res) => {
+// GET /plans - fetch all plans for public display
+router.get('/plans', (req, res) => {
   db.query('SELECT * FROM plans', (err, plans) => {
     if (err) return res.status(500).json({ error: 'Failed to fetch plans' });
     res.json(plans);
