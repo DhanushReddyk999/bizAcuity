@@ -4,7 +4,7 @@ const db = require('../db');
 const { authenticateToken } = require('../index');
 
 // GET /plans - fetch all plans (no join, just return all columns)
-router.get('/plans', authenticateToken, (req, res) => {
+router.get('/plans', (req, res) => {
   db.query('SELECT * FROM plans', (err, plans) => {
     if (err) return res.status(500).json({ error: 'Failed to fetch plans' });
     res.json(plans);
