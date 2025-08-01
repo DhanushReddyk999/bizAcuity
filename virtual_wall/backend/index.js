@@ -48,5 +48,12 @@ app.use(draftRoutes);
 app.use(adminRoutes);
 app.use(sharingRoutes);
 app.use('/api/subscriptions', subscriptionsRoutes);
+app.use('/api/plans', (req, res) => {
+  // Handle plans requests
+  db.query('SELECT * FROM plans', (err, plans) => {
+    if (err) return res.status(500).json({ error: 'Failed to fetch plans' });
+    res.json(plans);
+  });
+});
 app.use('/mail-verification', mailVerificationRoutes);
 app.use(adminPlanRoutes);
