@@ -1565,9 +1565,13 @@ function AddPlanForm({ onPlanAdded }) {
         e.preventDefault();
         setLoading(true); setError("");
         try {
-          const res = await fetch('/api/admin/plans', {
+          const user = JSON.parse(localStorage.getItem("user"));
+          const res = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.ADMIN_PLANS), {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${user.token}`
+            },
             body: JSON.stringify({ name, price, duration })
           });
           if (!res.ok) throw new Error(await res.text());
@@ -1678,9 +1682,13 @@ function PlanRow({ plan, onPlanUpdated, onPlanDeleted }) {
                 setLoading(true); 
                 setError("");
                 try {
-                  const res = await fetch(`/api/admin/plans/${plan.id}`, {
+                  const user = JSON.parse(localStorage.getItem("user"));
+                  const res = await fetch(buildApiUrl(`${API_CONFIG.ENDPOINTS.ADMIN_PLANS}/${plan.id}`), {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${user.token}`
+                    },
                     body: JSON.stringify({ name, price, duration })
                   });
                   if (!res.ok) throw new Error(await res.text());
@@ -1721,7 +1729,11 @@ function PlanRow({ plan, onPlanUpdated, onPlanDeleted }) {
                 setLoading(true); 
                 setError("");
                 try {
-                  const res = await fetch(`/api/admin/plans/${plan.id}`, { method: 'DELETE' });
+                  const user = JSON.parse(localStorage.getItem("user"));
+                  const res = await fetch(buildApiUrl(`${API_CONFIG.ENDPOINTS.ADMIN_PLANS}/${plan.id}`), { 
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                  });
                   if (!res.ok) throw new Error(await res.text());
                   if (onPlanDeleted) onPlanDeleted();
                 } catch (err) { setError(err.message); }
