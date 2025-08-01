@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { buildApiUrl } from './config/api';
 
 const PlanContext = createContext();
 
@@ -20,12 +21,12 @@ export function PlanProvider({ children }) {
         return;
       }
       
-      const res = await fetch(`/api/subscriptions/status/${user.id}`);
+      const res = await fetch(buildApiUrl(`/api/subscriptions/status/${user.id}`));
       const planStatus = await res.json();
       setPlan(planStatus);
       
       // Fetch plan features
-      const plansRes = await fetch('/api/plans');
+      const plansRes = await fetch(buildApiUrl('/api/plans'));
       const plans = await plansRes.json();
       
       let planObj;

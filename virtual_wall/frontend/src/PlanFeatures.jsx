@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { buildApiUrl } from './config/api';
 
 // Example feature tree config (replace with your actual features)
 const featureTree = [
@@ -116,7 +117,7 @@ export default function PlanFeatures() {
       setLoading(true);
       setError("");
       try {
-        const res = await fetch(`/api/admin/plans`);
+        const res = await fetch(buildApiUrl('/admin/plans'));
         const plans = await res.json();
         const thisPlan = plans.find(p => String(p.id) === String(planId));
         setPlan(thisPlan);
@@ -145,7 +146,7 @@ export default function PlanFeatures() {
     setSuccess("");
     try {
       // Save feature toggles (download, custom bg, upload image)
-      await fetch(`/api/admin/plans/${planId}/feature-toggles`, {
+      await fetch(buildApiUrl(`/admin/plans/${planId}/feature-toggles`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,7 +157,7 @@ export default function PlanFeatures() {
       });
       // Save max drafts if changed
       if (String(maxDrafts) !== String(initialMaxDrafts)) {
-        await fetch(`/api/admin/plans/${planId}/max-drafts`, {
+        await fetch(buildApiUrl(`/admin/plans/${planId}/max-drafts`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ maxDrafts: maxDrafts === "" ? null : Number(maxDrafts) }),
@@ -165,7 +166,7 @@ export default function PlanFeatures() {
       }
       // Save max stickers if changed
       if (String(maxStickers) !== String(initialMaxStickers)) {
-        await fetch(`/api/admin/plans/${planId}/sticker-limit`, {
+        await fetch(buildApiUrl(`/admin/plans/${planId}/sticker-limit`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ stickers_limit: maxStickers }),
@@ -173,7 +174,7 @@ export default function PlanFeatures() {
         setInitialMaxStickers(maxStickers);
       }
       // Save share toggles
-      await fetch(`/api/admin/plans/${planId}/share-toggles`, {
+      await fetch(buildApiUrl(`/admin/plans/${planId}/share-toggles`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -6,7 +6,22 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': process.env.VITE_BACKEND_URL || 'https://bizacuity.onrender.com',
+      '/api': {
+        target: process.env.VITE_BACKEND_URL || 'https://bizacuity.onrender.com',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
+  base: process.env.NODE_ENV === 'production' ? '/' : '/',
+  publicDir: 'public',
 })

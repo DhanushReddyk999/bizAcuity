@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { buildApiUrl } from './config/api';
 import './subscriptions.css';
 import './Profile.css';
 
@@ -31,7 +32,7 @@ export default function Subscriptions({ open, onClose, currentPlan, onUpgrade, i
 
   // Fetch plans from backend
   useEffect(() => {
-    fetch('/api/plans')
+    fetch(buildApiUrl('/api/plans'))
       .then(res => res.json())
       .then(data => setPlans(data))
       .catch(() => setPlans([]));
@@ -42,10 +43,10 @@ export default function Subscriptions({ open, onClose, currentPlan, onUpgrade, i
     const fetchStatus = async () => {
       if (!userId) return;
       try {
-        const res = await fetch(`/api/subscriptions/status/${userId}`);
+        const res = await fetch(buildApiUrl(`/api/subscriptions/status/${userId}`));
         const data = await res.json();
         if (data.expires && Date.now() > data.expires) {
-          await fetch('/api/subscriptions/start-free-trial', {
+          await fetch(buildApiUrl('/api/subscriptions/start-free-trial'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId }),
@@ -75,7 +76,7 @@ export default function Subscriptions({ open, onClose, currentPlan, onUpgrade, i
     setLoading(true);
     try {
       // You may want to add duration selection logic here if needed
-      const res = await fetch(`/api/subscriptions/purchase`, {
+      const res = await fetch(buildApiUrl(`/api/subscriptions/purchase`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, planId: plan.id }),
@@ -363,7 +364,7 @@ export default function Subscriptions({ open, onClose, currentPlan, onUpgrade, i
                     setLoading(true);
                     setCancelError("");
                     try {
-                      const res = await fetch('/api/subscriptions/cancel', {
+                      const res = await fetch(buildApiUrl('/api/subscriptions/cancel'), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ userId }),

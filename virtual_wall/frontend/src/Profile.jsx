@@ -103,7 +103,7 @@ export default function Profile() {
       u = JSON.parse(localStorage.getItem('user'));
     } catch {}
     if (!u?.id) return;
-    fetch(`/api/subscriptions/status/${u.id}`)
+    fetch(buildApiUrl(`/api/subscriptions/status/${u.id}`))
       .then(res => res.json())
       .then(data => {
         setSubscription(data.plan || 'free');
