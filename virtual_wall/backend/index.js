@@ -49,11 +49,15 @@ app.use(adminRoutes);
 app.use(sharingRoutes);
 app.use('/api/subscriptions', subscriptionsRoutes);
 app.use('/api/plans', (req, res) => {
-  // Handle plans requests
-  db.query('SELECT * FROM plans', (err, plans) => {
-    if (err) return res.status(500).json({ error: 'Failed to fetch plans' });
-    res.json(plans);
-  });
+  // Handle plans requests - only GET requests
+  if (req.method === 'GET') {
+    db.query('SELECT * FROM plans', (err, plans) => {
+      if (err) return res.status(500).json({ error: 'Failed to fetch plans' });
+      res.json(plans);
+    });
+  } else {
+    res.status(405).json({ error: 'Method not allowed' });
+  }
 });
 app.use('/mail-verification', mailVerificationRoutes);
 app.use('/api/admin', adminPlanRoutes);

@@ -109,12 +109,6 @@ router.delete('/plans/:id', (req, res) => {
   });
 });
 
-// GET /plans - fetch all plans for public display
-router.get('/plans', (req, res) => {
-  db.query('SELECT * FROM plans', (err, plans) => {
-    if (err) return res.status(500).json({ error: 'Failed to fetch plans' });
-    res.json(plans);
-  });
-});
+
 
 module.exports = router; 
