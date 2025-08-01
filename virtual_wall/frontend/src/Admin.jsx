@@ -3,6 +3,7 @@ import Wall from "./wall.jsx";
 import { useNavigate } from "react-router-dom";
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthText } from './utils/passwordValidation';
 import { buildApiUrl } from './config/api';
+import API_CONFIG from './config/api';
 import { APP_CONSTANTS } from './config/constants';
 import './admin.css';
 
@@ -282,7 +283,7 @@ export default function Admin() {
     setSelectedUsers([]);
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      const res = await fetch(buildApiUrl("/admin/users"), {
+      const res = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.ADMIN_USERS), {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       if (!res.ok) throw new Error(await res.text());
@@ -324,7 +325,7 @@ export default function Admin() {
         setError("");
         try {
           const adminUser = JSON.parse(localStorage.getItem("user"));
-          const res = await fetch(buildApiUrl(`/admin/user/${userId}`), {
+          const res = await fetch(buildApiUrl(`${API_CONFIG.ENDPOINTS.ADMIN_USER}/${userId}`), {
             method: "DELETE",
             headers: {
               "Content-Type": "application/json",
@@ -378,7 +379,7 @@ export default function Admin() {
         try {
           const adminUser = JSON.parse(localStorage.getItem("user"));
           for (const userId of selectedUsers) {
-            const res = await fetch(buildApiUrl(`/admin/user/${userId}`), {
+            const res = await fetch(buildApiUrl(`${API_CONFIG.ENDPOINTS.ADMIN_USER}/${userId}`), {
               method: "DELETE",
               headers: {
                 "Content-Type": "application/json",
@@ -459,7 +460,7 @@ export default function Admin() {
               return;
             }
             // Use the new role-specific endpoint for role changes
-            const roleRes = await fetch(buildApiUrl(`/admin/user/${userId}/role`), {
+            const roleRes = await fetch(buildApiUrl(`${API_CONFIG.ENDPOINTS.ADMIN_USER}/${userId}/role`), {
               method: "PUT",
               headers: {
                 "Content-Type": "application/json",
@@ -490,7 +491,7 @@ export default function Admin() {
           
           // For other fields (username, email, plan_id, subscription_expires), use the original endpoint
           const requestBody = { ...editFields, adminUsername: adminUser.username, adminPassword };
-          const res = await fetch(buildApiUrl(`/admin/user/${userId}`), {
+          const res = await fetch(buildApiUrl(`${API_CONFIG.ENDPOINTS.ADMIN_USER}/${userId}`), {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -542,7 +543,7 @@ export default function Admin() {
           const currentUser = JSON.parse(localStorage.getItem('user'));
           if (currentUser && currentUser.id === userId) {
             // Fetch the latest user info from the backend
-            const res = await fetch(buildApiUrl(`/admin/user/${userId}`), {
+            const res = await fetch(buildApiUrl(`${API_CONFIG.ENDPOINTS.ADMIN_USER}/${userId}`), {
               headers: { Authorization: `Bearer ${currentUser.token}` },
             });
             if (res.ok) {
@@ -605,7 +606,7 @@ export default function Admin() {
         setError("");
         try {
           const adminUser = JSON.parse(localStorage.getItem("user"));
-          const res = await fetch(buildApiUrl("/admin/user"), {
+          const res = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.ADMIN_USER), {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -654,7 +655,7 @@ export default function Admin() {
     setError("");
     try {
       const adminUser = JSON.parse(localStorage.getItem("user"));
-      const res = await fetch(buildApiUrl("/admin/drafts"), {
+      const res = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.ADMIN_DRAFTS), {
         headers: { Authorization: `Bearer ${adminUser.token}` },
       });
       if (!res.ok) throw new Error(await res.text());
@@ -704,7 +705,7 @@ export default function Admin() {
       const user = JSON.parse(localStorage.getItem("user"));
       
       // Load users data
-      const usersRes = await fetch(buildApiUrl('/admin/users'), {
+      const usersRes = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.ADMIN_USERS), {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       if (!usersRes.ok) throw new Error('Failed to fetch users');
@@ -712,7 +713,7 @@ export default function Admin() {
       setUsers(usersData);
       
       // Load drafts data
-      const draftsRes = await fetch(buildApiUrl('/admin/drafts'), {
+      const draftsRes = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.ADMIN_DRAFTS), {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       if (!draftsRes.ok) throw new Error('Failed to fetch drafts');
@@ -737,7 +738,7 @@ export default function Admin() {
     setUserDetailsPhoto(null);
     try {
       const adminUser = JSON.parse(localStorage.getItem("user"));
-      const res = await fetch(buildApiUrl(`/admin/user/${userId}`), {
+      const res = await fetch(buildApiUrl(`${API_CONFIG.ENDPOINTS.ADMIN_USER}/${userId}`), {
         headers: { Authorization: `Bearer ${adminUser.token}` },
       });
       if (!res.ok) throw new Error(await res.text());
@@ -819,7 +820,7 @@ export default function Admin() {
     setOtpError('');
     try {
       const adminUser = JSON.parse(localStorage.getItem("user"));
-      const res = await fetch(buildApiUrl('/admin/resend-email-change-otp'), {
+      const res = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.ADMIN_RESEND_EMAIL_CHANGE_OTP), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1455,7 +1456,7 @@ export default function Admin() {
                         setOtpError('');
                         try {
                           const adminUser = JSON.parse(localStorage.getItem("user"));
-                          const res = await fetch(buildApiUrl('/admin/verify-email-change'), {
+                          const res = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.ADMIN_VERIFY_EMAIL_CHANGE), {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
