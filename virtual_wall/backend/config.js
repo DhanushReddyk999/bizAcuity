@@ -30,7 +30,7 @@ const config = {
   },
   
   // Frontend URL (for sharing links)
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'https://bizacuity-1.onrender.com',
   
   // File Upload Configuration
   UPLOAD: {
@@ -59,7 +59,7 @@ const config = {
   
   // CORS Configuration
   CORS: {
-    ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    ORIGIN: process.env.CORS_ORIGIN || 'https://bizacuity-1.onrender.com',
     CREDENTIALS: true,
   },
 };
