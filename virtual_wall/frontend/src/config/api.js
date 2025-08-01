@@ -1,4 +1,4 @@
-// API Configuration
+// API Configuration - Updated for deployment
 const API_CONFIG = {
   // Base URLs
   BACKEND_URL: import.meta.env.VITE_BACKEND_URL || 'https://bizacuity.onrender.com',
