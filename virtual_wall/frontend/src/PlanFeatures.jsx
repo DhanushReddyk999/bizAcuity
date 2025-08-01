@@ -116,8 +116,28 @@ export default function PlanFeatures() {
     async function fetchPlanAndFeatures() {
       setLoading(true);
       setError("");
+      
+      // Get user token for authentication
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user || !user.token) {
+        setError("Authentication required");
+        setLoading(false);
+        return;
+      }
+      
       try {
-        const res = await fetch(buildApiUrl('/api/admin/plans'));
+        const res = await fetch(buildApiUrl('/api/admin/plans'), {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+        
+        if (res.status === 401 || res.status === 403) {
+          setError("Authentication failed. Please log in again.");
+          setLoading(false);
+          return;
+        }
+        
         const plans = await res.json();
         const thisPlan = plans.find(p => String(p.id) === String(planId));
         setPlan(thisPlan);
@@ -144,11 +164,23 @@ export default function PlanFeatures() {
     setSaving(true);
     setError("");
     setSuccess("");
+    
+    // Get user token for authentication
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.token) {
+      setError("Authentication required");
+      setSaving(false);
+      return;
+    }
+    
     try {
       // Save feature toggles (download, custom bg, upload image)
       await fetch(buildApiUrl(`/api/admin/plans/${planId}/feature-toggles`), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
         body: JSON.stringify({
           download_wall_enabled: downloadWallEnabled,
           custom_bg_enabled: customBgEnabled,
@@ -159,7 +191,10 @@ export default function PlanFeatures() {
       if (String(maxDrafts) !== String(initialMaxDrafts)) {
         await fetch(buildApiUrl(`/api/admin/plans/${planId}/max-drafts`), {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.token}`
+          },
           body: JSON.stringify({ maxDrafts: maxDrafts === "" ? null : Number(maxDrafts) }),
         });
         setInitialMaxDrafts(maxDrafts);
@@ -168,7 +203,10 @@ export default function PlanFeatures() {
       if (String(maxStickers) !== String(initialMaxStickers)) {
         await fetch(buildApiUrl(`/api/admin/plans/${planId}/sticker-limit`), {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.token}`
+          },
           body: JSON.stringify({ stickers_limit: maxStickers }),
         });
         setInitialMaxStickers(maxStickers);
@@ -176,7 +214,10 @@ export default function PlanFeatures() {
       // Save share toggles
       await fetch(buildApiUrl(`/api/admin/plans/${planId}/share-toggles`), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
         body: JSON.stringify({
           share_authorized_view_enabled: shareAuthView ? 1 : 0,
           share_authorized_edit_enabled: shareAuthEdit ? 1 : 0,
