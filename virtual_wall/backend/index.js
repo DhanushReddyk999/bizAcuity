@@ -45,7 +45,7 @@ const mailVerificationRoutes = require('./routes/mail-verification');
 const adminPlanRoutes = require('./routes/admin_plan');
 app.use(authRoutes);
 app.use(draftRoutes);
-app.use(adminRoutes);
+app.use('/api/admin', adminRoutes);
 app.use(sharingRoutes);
 app.use('/api/subscriptions', subscriptionsRoutes);
 app.use('/api/plans', (req, res) => {

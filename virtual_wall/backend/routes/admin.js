@@ -13,7 +13,7 @@ function generateOTP() {
 }
 
 // Delete a user by id (admin only, requires admin password)
-router.delete("/admin/user/:id", authenticateToken, async (req, res) => {
+router.delete("/user/:id", authenticateToken, async (req, res) => {
   const { adminUsername, adminPassword } = req.body;
   const userId = req.params.id;
   if (!adminUsername || !adminPassword) {
@@ -48,7 +48,7 @@ router.delete("/admin/user/:id", authenticateToken, async (req, res) => {
 });
 
 // Update a user by id (admin only, requires admin password)
-router.put("/admin/user/:id", authenticateToken, async (req, res) => {
+router.put("/user/:id", authenticateToken, async (req, res) => {
   const { username, email, role, adminUsername, adminPassword, plan_id, subscription_expires } = req.body;
   const userId = req.params.id;
   if (!username || !email || !role || !adminUsername || !adminPassword) {
@@ -158,7 +158,7 @@ router.put("/admin/user/:id", authenticateToken, async (req, res) => {
 });
 
 // Admin resends OTP for user email change
-router.post('/admin/resend-email-change-otp', authenticateToken, async (req, res) => {
+router.post('/resend-email-change-otp', authenticateToken, async (req, res) => {
   const { userId } = req.body;
   if (!userId) {
     return res.status(400).json({ success: false, error: 'Missing user ID' });
@@ -209,7 +209,7 @@ router.post('/admin/resend-email-change-otp', authenticateToken, async (req, res
 });
 
 // Admin verifies OTP for user email change
-router.post('/admin/verify-email-change', authenticateToken, async (req, res) => {
+router.post('/verify-email-change', authenticateToken, async (req, res) => {
   const { userId, otp } = req.body;
   if (!userId || !otp) {
     return res.status(400).json({ success: false, error: 'Missing fields' });
@@ -237,7 +237,7 @@ router.post('/admin/verify-email-change', authenticateToken, async (req, res) =>
 });
 
 // Get all verified users (admin only)
-router.get("/admin/users", authenticateToken, (req, res) => {
+router.get("/users", authenticateToken, (req, res) => {
   db.query("SELECT users.id, users.username, users.email, users.role, users.plan_id, users.subscription_expires, plans.name AS plan_name FROM users LEFT JOIN plans ON users.plan_id = plans.id WHERE users.is_verified = 1", (err, results) => {
     if (err) return res.status(500).send("Error fetching users");
     return res.status(200).json(results);
@@ -245,7 +245,7 @@ router.get("/admin/users", authenticateToken, (req, res) => {
 });
 
 // Add a new user (admin only, requires admin credentials)
-router.post("/admin/user", authenticateToken, async (req, res) => {
+router.post("/user", authenticateToken, async (req, res) => {
   const { username, email, role, password, adminUsername, adminPassword } = req.body;
   if (!username || !email || !role || !password || !adminUsername) {
     return res.status(400).send("All fields are required");
@@ -323,7 +323,7 @@ router.post("/admin/user", authenticateToken, async (req, res) => {
 });
 
 // Get all drafts (admin only)
-router.get("/admin/drafts", authenticateToken, (req, res) => {
+router.get("/drafts", authenticateToken, (req, res) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).send("Not authorized");
   }
@@ -334,7 +334,7 @@ router.get("/admin/drafts", authenticateToken, (req, res) => {
 });
 
 // Get a single user by id (admin only)
-router.get("/admin/user/:id", authenticateToken, (req, res) => {
+router.get("/user/:id", authenticateToken, (req, res) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).send("Not authorized");
   }
@@ -347,7 +347,7 @@ router.get("/admin/user/:id", authenticateToken, (req, res) => {
 });
 
 // Update user role (admin only)
-router.put("/admin/user/:id/role", authenticateToken, async (req, res) => {
+router.put("/user/:id/role", authenticateToken, async (req, res) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).send("Not authorized");
   }

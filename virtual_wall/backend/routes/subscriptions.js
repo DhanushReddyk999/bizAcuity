@@ -2,13 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// GET /plans - fetch all plans
-router.get('/plans', (req, res) => {
-  db.query('SELECT * FROM plans', (err, plans) => {
-    if (err) return res.status(500).json({ error: 'Failed to fetch plans' });
-    res.json(plans);
-  });
-});
+
 
 // Start free trial
 router.post('/start-free-trial', (req, res) => {
