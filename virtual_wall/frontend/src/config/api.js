@@ -1,8 +1,8 @@
 // API Configuration - Updated for deployment
 const API_CONFIG = {
   // Base URLs
-  BACKEND_URL: import.meta.env.VITE_BACKEND_URL || 'http://13.127.88.166:3000',
-  FRONTEND_URL: import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173',
+  BACKEND_URL: import.meta.env.VITE_BACKEND_URL || 'http://13.127.88.166',
+  FRONTEND_URL: import.meta.env.VITE_FRONTEND_URL || 'http://13.127.88.166',
   
   // API Endpoints
   ENDPOINTS: {
