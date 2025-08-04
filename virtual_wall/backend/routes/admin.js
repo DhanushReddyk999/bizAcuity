@@ -37,11 +37,20 @@ router.delete("/user/:id", authenticateToken, async (req, res) => {
         return res.status(404).send("User not found");
       }
       const { email, username } = userRows[0];
-      db.query("DELETE FROM users WHERE id=?", [userId], (err, result) => {
-        if (err) return res.status(500).send("Failed to delete user");
-        if (result.affectedRows === 0) return res.status(404).send("User not found");
-        // Send email notification
-        sendAccountDeletionEmail(email, username);
+      
+      // First delete user's walls/drafts to avoid foreign key constraint
+      db.query("DELETE FROM walls WHERE uid=?", [userId], (err, wallsResult) => {
+        if (err) return res.status(500).send("Failed to delete user's walls");
+        
+        // Now delete the user
+        db.query("DELETE FROM users WHERE id=?", [userId], (err, result) => {
+          if (err) return res.status(500).send("Failed to delete user");
+          if (result.affectedRows === 0) return res.status(404).send("User not found");
+          // Send email notification
+          sendAccountDeletionEmail(email, username);
+          // Send success response
+          return res.status(200).send("User deleted successfully");
+        });
       });
     });
   });
