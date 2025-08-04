@@ -48,7 +48,7 @@ router.delete("/admin/user/:id", authenticateToken, async (req, res) => {
 });
 
 // Update a user by id (admin only, requires admin password)
-router.put("/admin/user/:id", authenticateToken, async (req, res) => {
+router.put("/user/:id", authenticateToken, async (req, res) => {
   const { username, email, role, adminUsername, adminPassword, plan_id, subscription_expires } = req.body;
   const userId = req.params.id;
   if (!username || !email || !role || !adminUsername || !adminPassword) {
