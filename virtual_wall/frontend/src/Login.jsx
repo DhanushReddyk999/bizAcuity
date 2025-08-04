@@ -41,10 +41,15 @@ export default function Login(){
                   headers: { Authorization: `Bearer ${userdata.token}` },
                 });
                 let fullUser = userdata;
-                if (res.ok) {
-                  const userInfo = await res.json();
-                  userInfo.token = userdata.token; // preserve token
-                  fullUser = userInfo;
+                if (res.ok && res.status !== 304) {
+                  try {
+                    const userInfo = await res.json();
+                    userInfo.token = userdata.token; // preserve token
+                    fullUser = userInfo;
+                  } catch (err) {
+                    // If JSON parsing fails, just use the original userdata
+                    console.log('Could not parse additional user info, using basic user data');
+                  }
                 }
                 localStorage.setItem("user",JSON.stringify(fullUser));
                 const redirectPath = location.state?.redirect || '/mainWall';
