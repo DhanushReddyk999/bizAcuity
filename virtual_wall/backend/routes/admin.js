@@ -13,7 +13,7 @@ function generateOTP() {
 }
 
 // Delete a user by id (admin only, requires admin password)
-router.delete("/admin/user/:id", authenticateToken, async (req, res) => {
+router.delete("/user/:id", authenticateToken, async (req, res) => {
   const { adminUsername, adminPassword } = req.body;
   const userId = req.params.id;
   if (!adminUsername || !adminPassword) {
@@ -158,7 +158,7 @@ router.put("/user/:id", authenticateToken, async (req, res) => {
 });
 
 // Admin resends OTP for user email change
-router.post('/admin/resend-email-change-otp', authenticateToken, async (req, res) => {
+router.post('/resend-email-change-otp', authenticateToken, async (req, res) => {
   const { userId } = req.body;
   if (!userId) {
     return res.status(400).json({ success: false, error: 'Missing user ID' });
@@ -209,7 +209,7 @@ router.post('/admin/resend-email-change-otp', authenticateToken, async (req, res
 });
 
 // Admin verifies OTP for user email change
-router.post('/admin/verify-email-change', authenticateToken, async (req, res) => {
+router.post('/verify-email-change', authenticateToken, async (req, res) => {
   const { userId, otp } = req.body;
   if (!userId || !otp) {
     return res.status(400).json({ success: false, error: 'Missing fields' });
@@ -245,7 +245,7 @@ router.get("/users", authenticateToken, (req, res) => {
 });
 
 // Add a new user (admin only, requires admin credentials)
-router.post("/admin/user", authenticateToken, async (req, res) => {
+router.post("/user", authenticateToken, async (req, res) => {
   const { username, email, role, password, adminUsername, adminPassword } = req.body;
   if (!username || !email || !role || !password || !adminUsername) {
     return res.status(400).send("All fields are required");
