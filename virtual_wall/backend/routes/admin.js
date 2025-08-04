@@ -237,7 +237,7 @@ router.post('/admin/verify-email-change', authenticateToken, async (req, res) =>
 });
 
 // Get all verified users (admin only)
-router.get("/admin/users", authenticateToken, (req, res) => {
+router.get("/users", authenticateToken, (req, res) => {
   db.query("SELECT users.id, users.username, users.email, users.role, users.plan_id, users.subscription_expires, plans.name AS plan_name FROM users LEFT JOIN plans ON users.plan_id = plans.id WHERE users.is_verified = 1", (err, results) => {
     if (err) return res.status(500).send("Error fetching users");
     return res.status(200).json(results);
@@ -323,7 +323,7 @@ router.post("/admin/user", authenticateToken, async (req, res) => {
 });
 
 // Get all drafts (admin only)
-router.get("/admin/drafts", authenticateToken, (req, res) => {
+router.get("/drafts", authenticateToken, (req, res) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).send("Not authorized");
   }
@@ -334,7 +334,7 @@ router.get("/admin/drafts", authenticateToken, (req, res) => {
 });
 
 // Get a single user by id (admin only)
-router.get("/admin/user/:id", authenticateToken, (req, res) => {
+router.get("/user/:id", authenticateToken, (req, res) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).send("Not authorized");
   }
@@ -347,7 +347,7 @@ router.get("/admin/user/:id", authenticateToken, (req, res) => {
 });
 
 // Update user role (admin only)
-router.put("/admin/user/:id/role", authenticateToken, async (req, res) => {
+router.put("/user/:id/role", authenticateToken, async (req, res) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).send("Not authorized");
   }
