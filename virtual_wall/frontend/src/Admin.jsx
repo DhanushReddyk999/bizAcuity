@@ -1208,12 +1208,7 @@ export default function Admin() {
                 border: '1px solid rgba(33, 150, 243, 0.1)'
               }}>
                 <Wall
-                  background={
-                    previewDraft.background &&
-                    (previewDraft.background.startsWith('url(') || previewDraft.background.includes('gradient'))
-                      ? previewDraft.background
-                      : `url(${previewDraft.background})`
-                  }
+                  background={previewDraft.background}
                   width={previewDraft.width}
                   height={previewDraft.height}
                   images={previewDraft.images}
