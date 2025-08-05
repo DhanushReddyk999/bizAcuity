@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const { sendAccountDeletionEmail, sendProfileEditEmail, sendPasswordChangeEmail } = require('../notification');
+// const { sendAccountDeletionEmail, sendProfileEditEmail, sendPasswordChangeEmail } = require('../notification');
 const { validatePassword } = require('../utils/passwordValidation');
 const config = require('../config');
 // const { authenticateToken } = require('../middleware/auth');
@@ -108,7 +108,7 @@ router.delete("/deleteUser", async (req, res) => {
       db.query(deleteUser, [username], (err) => {
         if (err) return res.status(500).send("Failed to delete user");
         try {
-          sendAccountDeletionEmail(result[0].email, result[0].username);
+          // sendAccountDeletionEmail(result[0].email, result[0].username);
         } catch (err) {
           console.error('Failed to send account deletion email:', err);
         }
@@ -159,7 +159,7 @@ router.put("/updateUser", async (req, res) => {
                 // Issue new JWT
                 const updatedUser = users[0];
                 try {
-                  sendProfileEditEmail(user.email, user.username);
+                  // sendProfileEditEmail(user.email, user.username);
                 } catch (err) {
                   console.error('Failed to send profile edit email:', err);
                 }
@@ -207,7 +207,7 @@ router.put("/changePassword", async (req, res) => {
     db.query("UPDATE users SET pwd=? WHERE id=?", [hashed, id], (err) => {
       if (err) return res.status(500).send("Failed to update password");
       try {
-        sendPasswordChangeEmail(user.email, user.username);
+        // sendPasswordChangeEmail(user.email, user.username);
       } catch (err) {
         console.error('Failed to send password change email:', err);
       }
