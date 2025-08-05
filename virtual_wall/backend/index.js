@@ -74,7 +74,7 @@ app.get('/health', (req, res) => {
 });
 
 // Catch-all handler: send back React's index.html file for any non-API routes
-app.get('*', (req, res) => {
+app.use((req, res) => {
   // Skip API routes
   if (req.path.startsWith('/api/') || req.path.startsWith('/mail-verification') || req.path === '/health') {
     return res.status(404).send('Not found');
