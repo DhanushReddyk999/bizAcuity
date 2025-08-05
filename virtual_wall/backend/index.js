@@ -4,6 +4,7 @@ const mysql = require("mysql2");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs"); // ✅ added bcrypt for secure passwords
 const { v4: uuidv4 } = require('uuid'); // For generating public share/edit IDs
+const path = require('path');
 const config = require('./config');
 
 const app = express();
@@ -16,9 +17,8 @@ app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
 const db = require('./db');
 
-app.listen(config.PORT, () => {
-  console.log(`Server started on port ${config.PORT}`);
-});
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // ✅ JWT middleware
 function authenticateToken(req, res, next) {
@@ -32,9 +32,6 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Export db, JWT_SECRET, and authenticateToken for use in route files
-module.exports = { db, JWT_SECRET: config.JWT.SECRET, authenticateToken };
-
 // Import routers
 const authRoutes = require('./routes/auth');
 const draftRoutes = require('./routes/drafts');
@@ -43,6 +40,8 @@ const sharingRoutes = require('./routes/sharing');
 const subscriptionsRoutes = require('./routes/subscriptions');
 const mailVerificationRoutes = require('./routes/mail-verification');
 const adminPlanRoutes = require('./routes/admin_plan');
+
+// API routes
 app.use(authRoutes);
 app.use(draftRoutes);
 app.use('/api/admin', adminRoutes);
@@ -61,3 +60,16 @@ app.use('/api/plans', (req, res) => {
 });
 app.use('/mail-verification', mailVerificationRoutes);
 app.use('/api/admin', adminPlanRoutes);
+
+// Catch-all handler: send back React's index.html file for any non-API routes
+// app.get('/*', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+// });
+
+app.listen(config.PORT, () => {
+  console.log(`Server started on port ${config.PORT}`);
+  console.log(`Frontend and Backend running on: http://localhost:${config.PORT}`);
+});
+
+// Export db, JWT_SECRET, and authenticateToken for use in route files
+module.exports = { db, JWT_SECRET: config.JWT.SECRET, authenticateToken };

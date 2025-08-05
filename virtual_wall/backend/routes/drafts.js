@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authenticateToken } = require('../index');
+const { authenticateToken } = require("../middleware/auth");
 
 // Save or update draft
 router.post("/saveDrafts", authenticateToken, (req, res) => {

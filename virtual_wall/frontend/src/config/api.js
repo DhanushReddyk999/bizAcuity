@@ -1,8 +1,8 @@
-// API Configuration - Updated for deployment
+// API Configuration - Updated for single server deployment
 const API_CONFIG = {
-  // Base URLs
-  BACKEND_URL: import.meta.env.VITE_BACKEND_URL || 'http://13.127.88.166',
-  FRONTEND_URL: import.meta.env.VITE_FRONTEND_URL || 'http://13.127.88.166',
+  // Base URLs - using relative paths since frontend and backend are on same server
+  BACKEND_URL: import.meta.env.VITE_BACKEND_URL || '',
+  FRONTEND_URL: import.meta.env.VITE_FRONTEND_URL || '',
   
   // API Endpoints
   ENDPOINTS: {

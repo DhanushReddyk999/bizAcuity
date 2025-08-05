@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authenticateToken } = require('../index');
+const { authenticateToken } = require("../middleware/auth");
 const bcrypt = require('bcryptjs');
 const { sendAccountDeletionEmail, sendProfileEditEmail } = require('../notification');
 const { v4: uuidv4 } = require('uuid');

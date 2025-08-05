@@ -1,11 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { JWT_SECRET, authenticateToken } = require('../index');
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { sendAccountDeletionEmail, sendProfileEditEmail, sendPasswordChangeEmail } = require('../notification');
 const { validatePassword } = require('../utils/passwordValidation');
+const config = require('../config');
+// const { authenticateToken } = require('../middleware/auth');
+
+// Temporary authenticateToken function
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).send("Access denied. No token provided.");
+  jwt.verify(token, config.JWT.SECRET, (err, user) => {
+    if (err) return res.status(403).send("Invalid token.");
+    req.user = user;
+    next();
+  });
+}
 
 // SIGN UP — now hashes password before storing
 router.post("/SignUp", async (req, res) => {
@@ -55,7 +68,7 @@ router.post("/Login", async (req, res) => {
     // Create JWT
     const token = jwt.sign(
       { id: user.id, username: user.username, email: user.email, role: user.role },
-      JWT_SECRET,
+      config.JWT_SECRET,
       { expiresIn: "2h" }
     );
 
@@ -152,7 +165,7 @@ router.put("/updateUser", async (req, res) => {
                 }
                 const token = jwt.sign(
                   { id: updatedUser.id, username: updatedUser.username, email: updatedUser.email, role: updatedUser.role },
-                  JWT_SECRET,
+                  config.JWT_SECRET,
                   { expiresIn: "2h" }
                 );
                 return res.status(200).json({ ...updatedUser, token });

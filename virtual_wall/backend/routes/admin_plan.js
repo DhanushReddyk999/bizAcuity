@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authenticateToken } = require('../index');
+const { authenticateToken } = require("../middleware/auth");
 
 // GET /plans - fetch all plans (no join, just return all columns)
 router.get('/plans', (req, res) => {
