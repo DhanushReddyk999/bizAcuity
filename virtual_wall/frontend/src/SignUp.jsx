@@ -10,19 +10,46 @@ export default function SignUp(){
     const [username,setUsername]=useState('');
     const [email,setEmail]=useState('');
     const [password,setPassword]=useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordValidation, setPasswordValidation] = useState({ isValid: false, errors: [], strength: 'weak' });
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [passwordMatchError, setPasswordMatchError] = useState('');
     
     const handlePasswordChange = (e) => {
         const newPassword = e.target.value;
         setPassword(newPassword);
         const validation = validatePassword(newPassword);
         setPasswordValidation(validation);
+        
+        // Check password match when password changes
+        if (confirmPassword && newPassword !== confirmPassword) {
+            setPasswordMatchError('Passwords do not match');
+        } else {
+            setPasswordMatchError('');
+        }
+    };
+
+    const handleConfirmPasswordChange = (e) => {
+        const newConfirmPassword = e.target.value;
+        setConfirmPassword(newConfirmPassword);
+        
+        // Check password match
+        if (password && newConfirmPassword !== password) {
+            setPasswordMatchError('Passwords do not match');
+        } else {
+            setPasswordMatchError('');
+        }
     };
 
     let handleSignUp=async ()=>{
         if (!passwordValidation.isValid) {
             alert(APP_CONSTANTS.VALIDATION_MESSAGES.PASSWORD_REQUIREMENTS);
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            alert('Passwords do not match. Please make sure both passwords are identical.');
             return;
         }
         
@@ -36,6 +63,7 @@ export default function SignUp(){
                     username,
                     email,
                     password,
+                    confirmPassword,
                 }),
             })
             if(response.ok){    
@@ -142,6 +170,29 @@ export default function SignUp(){
                                 {passwordValidation.errors.map((error, index) => (
                                     <div key={index} className="signup-error-item">• {error}</div>
                                 ))}
+                            </div>
+                        )}
+                        
+                        <div className="signup-password-container">
+                            <input 
+                                type={showConfirmPassword ? "text" : "password"} 
+                                placeholder="Confirm password" 
+                                value={confirmPassword} 
+                                onChange={handleConfirmPasswordChange}
+                                className="signup-password-input"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="signup-password-toggle"
+                            >
+                                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                            </button>
+                        </div>
+                        
+                        {passwordMatchError && (
+                            <div className="signup-errors">
+                                <div className="signup-error-item">• {passwordMatchError}</div>
                             </div>
                         )}
                     </form>

@@ -22,7 +22,12 @@ function authenticateToken(req, res, next) {
 
 // SIGN UP — now hashes password before storing
 router.post("/SignUp", async (req, res) => {
-  let { username, password, email } = req.body;
+  let { username, password, email, confirmPassword } = req.body;
+  
+  // Optional confirm password validation
+  if (confirmPassword && password !== confirmPassword) {
+    return res.status(400).send("Passwords do not match");
+  }
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     let q = `INSERT INTO users(username,email,pwd) values(?)`;

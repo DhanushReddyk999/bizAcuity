@@ -24,9 +24,14 @@ function generateOTP() {
 
 // POST /register
 router.post('/register', async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, confirmPassword } = req.body;
   if (!username || !email || !password) {
     return res.status(400).json({ success: false, error: 'Missing fields' });
+  }
+  
+  // Optional confirm password validation (frontend handles primary validation)
+  if (confirmPassword && password !== confirmPassword) {
+    return res.status(400).json({ success: false, error: 'Passwords do not match' });
   }
   
   // Validate password strength
