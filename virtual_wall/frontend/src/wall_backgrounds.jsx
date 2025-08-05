@@ -41,14 +41,18 @@ export default function WallBackgrounds({ setBackground, activeType, setActiveTy
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
-      const url = URL.createObjectURL(file);
-      setBackground(`url(${url})`);
-      setActiveType("image");
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result;
+        setBackground(`url(${dataUrl})`);
+        setActiveType("image");
 
-      if (imageUrlRef.current) {
-        URL.revokeObjectURL(imageUrlRef.current);
-      }
-      imageUrlRef.current = url;
+        if (imageUrlRef.current) {
+          URL.revokeObjectURL(imageUrlRef.current);
+        }
+        imageUrlRef.current = dataUrl;
+      };
+      reader.readAsDataURL(file);
     }
   };
 
