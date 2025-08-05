@@ -14,7 +14,7 @@ services:
       cd frontend && npm install --include=dev && npm run build
       echo "Building backend..."
       cd ../backend && npm install
-    startCommand: cd backend && node test-server.js
+    startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV
         value: production
