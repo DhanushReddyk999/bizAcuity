@@ -475,6 +475,32 @@ export default function Profile() {
     }
   };
 
+  const handleDeletePhoto = async () => {
+    if (!confirm("Are you sure you want to delete your profile photo?")) return;
+    try {
+      const res = await fetch(buildApiUrl("/uploadProfilePhoto"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: user?.token ? `Bearer ${user.token}` : undefined,
+        },
+        body: JSON.stringify({
+          id: user.id,
+          photo: null, // Send null to delete the photo
+        }),
+      });
+      if (!res.ok) {
+        alert(await res.text() || "Failed to delete photo");
+        return;
+      }
+      alert("Profile photo deleted!");
+      setProfilePhotoPreview(null);
+      setProfilePhoto(null);
+    } catch (err) {
+      alert("Something went wrong. Try again.");
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -1174,29 +1200,57 @@ export default function Profile() {
                 </svg>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current && fileInputRef.current.click()}
-              className="profile-btn profile-photo-upload-btn"
-            >
-              <svg width="20" height="20" fill="#fff" viewBox="0 0 24 24" className="profile-btn-svg"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm8-10h-3.17l-1.84-2.63A2 2 0 0 0 13.42 3h-2.84a2 2 0 0 0-1.57.87L7.17 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm-8 10a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg>
-              {profilePhotoPreview ? 'Change Photo' : 'Upload Photo'}
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                ref={fileInputRef}
-                onChange={e => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    setProfilePhoto(file);
-                    const reader = new FileReader();
-                    reader.onloadend = () => setProfilePhotoPreview(reader.result);
-                    reader.readAsDataURL(file);
-                  }
-                }}
-              />
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                className="profile-btn profile-photo-upload-btn"
+              >
+                <svg width="20" height="20" fill="#fff" viewBox="0 0 24 24" className="profile-btn-svg"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm8-10h-3.17l-1.84-2.63A2 2 0 0 0 13.42 3h-2.84a2 2 0 0 0-1.57.87L7.17 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm-8 10a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg>
+                {profilePhotoPreview ? 'Change Photo' : 'Upload Photo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  ref={fileInputRef}
+                  onChange={e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setProfilePhoto(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => setProfilePhotoPreview(reader.result);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </button>
+              {profilePhotoPreview && (
+                <button
+                  type="button"
+                  onClick={handleDeletePhoto}
+                  className="profile-btn profile-photo-delete-btn"
+                  style={{
+                    background: 'linear-gradient(90deg, #ff4d4d 0%, #ff7b7b 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <svg width="16" height="16" fill="#fff" viewBox="0 0 24 24">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                  Delete Photo
+                </button>
+              )}
+            </div>
             <button
               type="button"
               onClick={handleSavePhoto}

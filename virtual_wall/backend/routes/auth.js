@@ -216,16 +216,36 @@ router.put("/changePassword", async (req, res) => {
   });
 });
 
-// Upload profile photo (base64 string in profile_photo field)
+// Upload profile photo (base64 string in profile_photo field) or delete photo (when photo is null)
 router.post("/uploadProfilePhoto", authenticateToken, (req, res) => {
   const { id, photo } = req.body;
-  if (!id || !photo) {
-    return res.status(400).send("User id and photo required");
+  if (!id) {
+    return res.status(400).send("User id required");
   }
   // Only allow authenticated user to update their own photo
   if (!req.user || req.user.id !== id) {
     return res.status(403).send("Not authorized");
   }
+  
+  // Handle photo deletion (when photo is null)
+  if (photo === null) {
+    db.query(
+      "UPDATE users SET profile_photo=NULL WHERE id=?",
+      [id],
+      (err, result) => {
+        if (err) return res.status(500).send("Failed to delete profile photo");
+        if (result.affectedRows === 0) return res.status(404).send("User not found");
+        return res.status(200).send("Profile photo deleted");
+      }
+    );
+    return;
+  }
+  
+  // Handle photo upload (when photo is provided)
+  if (!photo) {
+    return res.status(400).send("Photo data required for upload");
+  }
+  
   db.query(
     "UPDATE users SET profile_photo=? WHERE id=?",
     [photo, id],
