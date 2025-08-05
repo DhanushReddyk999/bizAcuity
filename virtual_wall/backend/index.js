@@ -8,6 +8,13 @@ const path = require('path');
 const config = require('./config');
 
 const app = express();
+
+// Add error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 app.use(cors({
   origin: config.CORS.ORIGIN,
   credentials: config.CORS.CREDENTIALS
@@ -61,6 +68,11 @@ app.use('/api/plans', (req, res) => {
 app.use('/mail-verification', mailVerificationRoutes);
 app.use('/api/admin', adminPlanRoutes);
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 // Catch-all handler: send back React's index.html file for any non-API routes
 // Temporarily commented out to fix path-to-regexp error
 // app.get('*', (req, res) => {
@@ -71,9 +83,28 @@ app.use('/api/admin', adminPlanRoutes);
 //   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 // });
 
-app.listen(config.PORT, () => {
+// Start server with error handling
+const server = app.listen(config.PORT, () => {
   console.log(`Server started on port ${config.PORT}`);
   console.log(`Frontend and Backend running on: http://localhost:${config.PORT}`);
+  console.log(`Health check available at: http://localhost:${config.PORT}/health`);
+});
+
+// Handle server errors
+server.on('error', (err) => {
+  console.error('Server error:', err);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
 
 // Export db, JWT_SECRET, and authenticateToken for use in route files
