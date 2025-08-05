@@ -62,13 +62,14 @@ app.use('/mail-verification', mailVerificationRoutes);
 app.use('/api/admin', adminPlanRoutes);
 
 // Catch-all handler: send back React's index.html file for any non-API routes
-app.get('*', (req, res) => {
-  // Skip API routes
-  if (req.path.startsWith('/api/') || req.path.startsWith('/mail-verification')) {
-    return res.status(404).send('Not found');
-  }
-  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-});
+// Temporarily commented out to fix path-to-regexp error
+// app.get('*', (req, res) => {
+//   // Skip API routes
+//   if (req.path.startsWith('/api/') || req.path.startsWith('/mail-verification')) {
+//     return res.status(404).send('Not found');
+//   }
+//   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+// });
 
 app.listen(config.PORT, () => {
   console.log(`Server started on port ${config.PORT}`);
