@@ -2,10 +2,11 @@ services:
   - type: web
     name: virtual-wall-backend
     env: node
+    rootDir: ./
     buildCommand: |
-      cd ../frontend && npm install && npm run build
+      cd frontend && npm install && npm run build
       cd ../backend && npm install
-    startCommand: npm start
+    startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV
         value: production
