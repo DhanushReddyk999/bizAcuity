@@ -92,6 +92,15 @@ export default function SignUp(){
     return (
         <div className="signup-container">
             <header className="signup-header">
+                <button
+                    className="signup-home-btn"
+                    onClick={() => navigate('/')}
+                    title="Go to Home"
+                >
+                    <svg width="28" height="28" fill="#fff" viewBox="0 0 24 24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                </button>
                 <div className="signup-header-logo">
                     🕯️ Altar Designer
                 </div>

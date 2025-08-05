@@ -68,6 +68,15 @@ export default function Login(){
     return (
         <div className="login-container">
             <header className="login-header">
+                <button
+                    className="login-home-btn"
+                    onClick={() => navigate('/')}
+                    title="Go to Home"
+                >
+                    <svg width="28" height="28" fill="#fff" viewBox="0 0 24 24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                </button>
                 <div className="login-header-logo">🕯️ Altar Designer</div>
                 <span className="login-header-subtitle">
                     Design your own altar with custom backgrounds and sacred decor

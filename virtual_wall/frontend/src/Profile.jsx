@@ -526,6 +526,15 @@ export default function Profile() {
   return (
     <>
       <div className="appHeader profile-header">
+        <button
+          className="profile-home-btn"
+          onClick={() => navigate('/')}
+          title="Go to Home"
+        >
+          <svg width="28" height="28" fill="#fff" viewBox="0 0 24 24">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+          </svg>
+        </button>
         Altar Designer
         <span>Design your own altar with custom backgrounds and sacred decor</span>
         <button
