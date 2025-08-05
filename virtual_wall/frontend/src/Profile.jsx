@@ -1200,7 +1200,7 @@ export default function Profile() {
                 </svg>
               )}
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <button
                 type="button"
                 onClick={() => fileInputRef.current && fileInputRef.current.click()}
@@ -1220,36 +1220,22 @@ export default function Profile() {
                       const reader = new FileReader();
                       reader.onloadend = () => setProfilePhotoPreview(reader.result);
                       reader.readAsDataURL(file);
-                    }
-                  }}
-                />
+                  }
+                }}
+              />
+            </button>
+            {profilePhotoPreview && (
+              <button
+                type="button"
+                onClick={handleDeletePhoto}
+                className="profile-delete-photo-btn"
+                title="Delete Photo"
+              >
+                <svg width="32" height="32" fill="#fff" viewBox="0 0 24 24" className="profile-btn-svg">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" transform="scale(1.2)"/>
+                </svg>
               </button>
-              {profilePhotoPreview && (
-                <button
-                  type="button"
-                  onClick={handleDeletePhoto}
-                  className="profile-btn profile-photo-delete-btn"
-                  style={{
-                    background: 'linear-gradient(90deg, #ff4d4d 0%, #ff7b7b 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '0.5rem 1rem',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  <svg width="16" height="16" fill="#fff" viewBox="0 0 24 24">
-                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                  </svg>
-                  Delete Photo
-                </button>
-              )}
+            )}
             </div>
             <button
               type="button"
