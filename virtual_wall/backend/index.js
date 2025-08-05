@@ -74,14 +74,13 @@ app.get('/health', (req, res) => {
 });
 
 // Catch-all handler: send back React's index.html file for any non-API routes
-// Temporarily commented out to fix path-to-regexp error
-// app.get('*', (req, res) => {
-//   // Skip API routes
-//   if (req.path.startsWith('/api/') || req.path.startsWith('/mail-verification')) {
-//     return res.status(404).send('Not found');
-//   }
-//   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-// });
+app.get('*', (req, res) => {
+  // Skip API routes
+  if (req.path.startsWith('/api/') || req.path.startsWith('/mail-verification') || req.path === '/health') {
+    return res.status(404).send('Not found');
+  }
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
 
 // Start server with error handling
 const server = app.listen(config.PORT, () => {
