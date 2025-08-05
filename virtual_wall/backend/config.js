@@ -1,6 +1,22 @@
 // Backend Configuration
 require('dotenv').config();
 
+// Auto-detect Render URL
+const getRenderUrl = () => {
+  // If FRONTEND_URL is provided, use it
+  if (process.env.FRONTEND_URL) {
+    return process.env.FRONTEND_URL;
+  }
+  
+  // If running on Render, construct the URL
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL;
+  }
+  
+  // Fallback for local development
+  return 'http://localhost:8080';
+};
+
 const config = {
   // Server Configuration
   PORT: process.env.PORT || 8080,
@@ -29,8 +45,8 @@ const config = {
     FROM: process.env.EMAIL_FROM || 'YOUR_EMAIL_FROM',
   },
   
-  // Frontend URL (for sharing links)
-  FRONTEND_URL: process.env.FRONTEND_URL || 'https://bizacuity-1.onrender.com',
+  // Frontend URL (for sharing links) - auto-detected
+  FRONTEND_URL: getRenderUrl(),
   
   // File Upload Configuration
   UPLOAD: {
@@ -57,9 +73,9 @@ const config = {
     PASSWORD_MIN_LENGTH: 8,
   },
   
-  // CORS Configuration
+  // CORS Configuration - auto-detected
   CORS: {
-    ORIGIN: process.env.CORS_ORIGIN || 'https://bizacuity-1.onrender.com',
+    ORIGIN: getRenderUrl(),
     CREDENTIALS: true,
   },
 };

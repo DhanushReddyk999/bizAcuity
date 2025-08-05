@@ -4,7 +4,15 @@ services:
     env: node
     rootDir: ./
     buildCommand: |
+      ls -la
+      echo "Current directory: $(pwd)"
+      echo "Checking if frontend directory exists:"
+      ls -la frontend/ || echo "Frontend directory not found"
+      echo "Checking if backend directory exists:"
+      ls -la backend/ || echo "Backend directory not found"
+      echo "Building frontend..."
       cd frontend && npm install && npm run build
+      echo "Building backend..."
       cd ../backend && npm install
     startCommand: cd backend && npm start
     envVars:
