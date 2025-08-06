@@ -16,9 +16,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    sourcemap: false, // Disable source maps for faster builds
+    minify: 'esbuild', // Explicitly use esbuild for minification
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          vendor: ['react', 'react-dom'], // Split vendor chunk for better caching
+        },
       },
     },
   },
