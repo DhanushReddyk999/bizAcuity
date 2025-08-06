@@ -73,25 +73,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Catch-all handler: serve frontend in dev, JSON 404 in production
-if (process.env.NODE_ENV === 'production') {
-  // In production, only handle API routes, let nginx serve the frontend
-  app.use((req, res) => {
-    res.status(404).json({ error: 'API endpoint not found' });
-  });
-} else {
-  // In development, serve the frontend for non-API routes
-  app.use((req, res) => {
-    if (
-      req.path.startsWith('/api/') ||
-      req.path.startsWith('/mail-verification') ||
-      req.path === '/health'
-    ) {
-      return res.status(404).send('Not found');
-    }
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-  });
-}
+// Catch-all handler: send back React's index.html file for any non-API routes
+app.use((req, res) => {
+  // Skip API routes
+  if (req.path.startsWith('/api/') || req.path.startsWith('/mail-verification') || req.path === '/health') {
+    return res.status(404).send('Not found');
+  }
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
 
 // Start server with error handling
 const server = app.listen(config.PORT, () => {
